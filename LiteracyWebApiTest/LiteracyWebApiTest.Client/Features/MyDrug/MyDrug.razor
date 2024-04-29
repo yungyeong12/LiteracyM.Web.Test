@@ -1,0 +1,35 @@
+﻿@page "/mydrug"
+@using LiteracyWebApiTest.Client.Features.MyDrug.Prescription
+@using LiteracyWebApiTest.Client.Features.MyDrug.Taking
+
+<div>
+    <button @onclick="ShowTakingDrugs">복용 중인 약</button>
+    <button @onclick="ShowPrescriptionDrugs">올해 처방약</button>
+</div>
+
+<div>
+    @if (_currentComponent == "복용약")
+    {
+        <TakingDrugs></TakingDrugs>
+    }
+    else
+    {
+        <PrescriptionDrugs></PrescriptionDrugs>
+    }
+</div>
+
+@code{
+    private string _currentComponent = "복용약";
+
+    private void ShowTakingDrugs()
+    {
+        _currentComponent = "복용약";
+        StateHasChanged();
+    }
+
+    private void ShowPrescriptionDrugs()
+    {
+        _currentComponent = "처방약";
+        StateHasChanged();
+    }
+}

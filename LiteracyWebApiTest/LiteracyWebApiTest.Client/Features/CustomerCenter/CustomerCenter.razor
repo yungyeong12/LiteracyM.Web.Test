@@ -1,0 +1,31 @@
+﻿@page "/customer-center"
+@inject NavigationManager Navigation
+
+<h3>고객센터</h3>
+
+<div class="row">
+    <div class="col-1"></div>
+    <div class="col-4">
+        <button type="button" class="btn btn-primary" @onclick="GoToFaq">
+            <h5>FAQ</h5>
+        </button>
+    </div>
+    <div class="col-2"></div>
+    <div class="col-4">
+        <button type="button" class="btn btn-primary" @onclick="GoToQuery">
+            <h5>1대1 문의</h5>
+        </button>
+    </div>
+    <div class="col-1"></div>
+</div>
+
+@code {
+    private void GoToFaq()
+    {
+        Navigation.NavigateTo("customer-support");
+    }
+    private void GoToQuery()
+    {
+        Navigation.NavigateTo("customer-query-home");
+    }
+}

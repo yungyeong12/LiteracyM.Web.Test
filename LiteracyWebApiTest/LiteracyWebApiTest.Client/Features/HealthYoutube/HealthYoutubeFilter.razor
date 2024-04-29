@@ -1,0 +1,165 @@
+﻿@page "/health-youtube-filter"
+@inject HttpClient HttpClient
+@using Syncfusion.Blazor.Buttons
+
+<div class="row">
+    <div class="col-2">
+        @if (_mainCategories is not null)
+        {
+            @foreach (var category in _mainCategories)
+            {
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-secondary" @onclick="() => GetSubCategoriesAsync(category.Code)">@category.Classification</button>
+                </div>
+            }
+        }
+    </div>
+    <div class="col-2">
+        @if (_subCategories is not null)
+        {
+            @foreach (var category in _subCategories)
+            {
+                @if (_patientSubCategories is not null && _patientSubCategories.Exists(item => item.Code == category.Code))
+                {
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-danger"> @category.Classification </button>
+                    </div>
+                }
+                else
+                {
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-outline-secondary" @onclick="() => AddCategory(category)"> @category.Classification </button>
+                    </div>
+                }
+            }
+        }
+    </div>
+    <div class="col-8">
+        <div class="row">
+            <div class="col-9">
+                <h4>어떤 정보에 관심이 있으세요?</h4>
+            </div>
+            <div class="col-3">
+                <button type="button" class="btn btn-danger" @onclick="SaveCaegoriesAsync"> 저장하기 </button>
+            </div>
+        </div>
+        <p>관심 주제를 3개까지 선택해 주세요.</p>
+        <p>주제에 딱 맞는 유튜브 영상을 추천해 드릴게요.</p>
+        <br/>
+        <div class="row">
+            @if (_patientSubCategories is not null && _patientSubCategories.Any())
+            {
+                @foreach (var subCategoriy in _patientSubCategories)
+                {
+                    <div class="col-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-10">
+                                        <h6 class="card-subtitle mb-2 text-body-secondary">@subCategoriy.Classification</h6>
+                                    </div>
+                                    <div class="col-2">
+                                        <button type="button" class="btn" data-bs-toggle="button" @onclick="@(() => DeleteCategory(subCategoriy))">
+                                            <SfIcon Name="IconName.Close" Size="IconSize.Large"></SfIcon>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+                @for (var i = 0; i < (3 - _patientSubCategories.Count); i++)
+                {
+                    <div class="col-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">+ 관심 주제</h5>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                @for (var i = 0; i < 3; i++)
+                {
+                    <div class="col-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">+ 관심 주제</h5>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+        <br/>
+        @if (_showCaution)
+        {
+            <div class="row">
+                <div class="col-3"></div>
+                <div class="col-6">
+                    <div class="card">
+                        <p>관심주제는 3개까지 선택 가능합니다.</p>
+                    </div>
+                </div>
+                <div class="col-3"></div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private YoutubeCategory[]? _mainCategories;
+    private YoutubeCategory[]? _subCategories;
+    private List<YoutubeCategory>? _patientSubCategories;
+    private List<string>? _videoCodes = new();
+    private bool _showCaution = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _mainCategories = await HttpClient.GetFromJsonAsync<YoutubeCategory[]>("/HealthYoutube/main-categories");
+        GetSubCategoriesAsync(_mainCategories[0].Code);
+
+        _patientSubCategories = await HttpClient.GetFromJsonAsync<List<YoutubeCategory>>("/HealthYoutube/patient/sub-categories");
+    }
+
+    private async void GetSubCategoriesAsync(string code)
+    {
+        _subCategories = await HttpClient.GetFromJsonAsync<YoutubeCategory[]>($"/HealthYoutube/sub-categories/{code}");
+
+        StateHasChanged();
+    }
+
+    private void AddCategory(YoutubeCategory category)
+    {
+        if (_patientSubCategories.Count == 3)
+        {
+            _showCaution = true;
+        }
+        else
+        {
+            _patientSubCategories.Add(category);
+
+            StateHasChanged();
+        }
+    }
+
+    private void DeleteCategory(YoutubeCategory category)
+    {
+        _showCaution = false;
+
+        _patientSubCategories.Remove(category);
+        StateHasChanged();
+    }
+
+    private async void SaveCaegoriesAsync()
+    {
+        foreach (var category in _patientSubCategories)
+        {
+            _videoCodes.Add(category.Code);
+        }
+
+        await HttpClient.PostAsJsonAsync("/HealthYoutube/sub-categories", _videoCodes);
+    }
+}

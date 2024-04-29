@@ -1,0 +1,12 @@
+[
+  {
+    "ContainingType": "LiteracyWebApiTest.Controllers.TokenController",
+    "Method": "AccessTokenAsync",
+    "RelativePath": "Token/test",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  }
+]

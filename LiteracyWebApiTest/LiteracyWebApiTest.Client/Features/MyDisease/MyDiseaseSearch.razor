@@ -1,0 +1,105 @@
+﻿@page "/mydisease-search"
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+@using Syncfusion.Blazor.Popups
+
+<h3>내가 가진 질병(검색)</h3>
+<br/>
+
+<div class="row">
+    <div class="col-2"></div>
+    <div class="col-8">
+        <div class="row">
+            <div class="col-8"></div>
+            <div class="col-4 d-grid gap-2">
+                <button type="button" class="btn btn-danger" @onclick='() => NavigationManager.NavigateTo("/mydisease")'>리스트보기</button>
+            </div>
+        </div>
+        <br/>
+        <div class="row">
+            <form method="post" @onsubmit="GetDiseaseListAsync">
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" placeholder="검색어를 입력해주세요" aria-describedby="basic-addon" @bind="_searchName">
+                </div>
+            </form>
+        </div>
+        @if (_diseaseNames is not null)
+        {
+            <p>검색 결과 총 @_diseaseNames.Count() 건</p>
+
+            @if (!_diseaseNames.Any())
+            {
+                <p>검색 결과가 없습니다.</p>
+            }
+            else
+            {
+                @foreach (var disease in _diseaseNames)
+                {
+                    @if (_patientDisease.Exists(item => item.KBioCode == disease.KBioCode))
+                    {
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-danger" @onclick="() => Visibility=true"> @disease.DiseaseName </button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-outline-secondary" @onclick="() => AddDisease(disease)"> @disease.DiseaseName </button>
+                        </div>
+                    }
+                }
+            }
+        }
+    </div>
+    <div class="col-2"></div>
+</div>
+
+<SfDialog Target="#target" Width="400px" IsModal="true" @bind-Visible="Visibility">
+    <DialogTemplates>
+        <Header> 이미 선택하신 질병입니다. </Header>
+        <Content>
+            <p>
+                다른 질병을 선택해주세요
+            </p>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        <DialogButton Content="확인" OnClick="@CloseDialog"/>
+    </DialogButtons>
+</SfDialog>
+
+@code {
+    private List<IndexDiseaseProfile>? _patientDisease;
+    private IEnumerable<IndexDiseaseProfile>? _diseaseNames;
+    private string _searchName = "";
+    private bool Visibility { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _patientDisease = await HttpClient.GetFromJsonAsync<List<IndexDiseaseProfile>>("/Disease/profile");
+    }
+
+    private async void AddDisease(IndexDiseaseProfile disease)
+    {
+        _patientDisease.Add(new IndexDiseaseProfile { DiseaseName = disease.DiseaseName, KBioCode = disease.KBioCode });
+        var result = await HttpClient.PostAsJsonAsync("/Disease/profile/kBioCode", _patientDisease);
+
+        if (result.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo($"/mydisease");
+        }
+    }
+
+    private async void GetDiseaseListAsync()
+    {
+        _diseaseNames = await HttpClient.GetFromJsonAsync<List<IndexDiseaseProfile>>($"/Disease/account/synonyms?diseaseName={_searchName}");
+        StateHasChanged();
+    }
+
+    private void CloseDialog()
+    {
+        Visibility = false;
+
+        StateHasChanged();
+    }
+}

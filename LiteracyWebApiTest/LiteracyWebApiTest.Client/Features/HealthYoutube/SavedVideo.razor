@@ -1,0 +1,82 @@
+﻿@page "/saved-video"
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+
+<div class="row">
+    <h4 class="col-2">최근 본 영상</h4>
+    <div class="col-8"></div>
+    <a href="all-saved-videos" class="col-2">더 보기</a>
+</div>
+@if (recentlyVideos.Count == 0)
+{
+    <p>저장된 영상이 없습니다.</p>
+}
+else
+{
+    <div class="row">
+        @foreach (var video in recentlyVideos)
+        {
+            <div class="card col-4">
+                <div class="card-body">
+                    <div class="row">
+                        <img src="@video.Thumbnail" class="rounded float-start" style="width:280px; height:170px">
+                    </div>
+                    <h6 class="card-title">@video.Title</h6>
+                    <p>@video.Introduction</p>
+                </div>
+            </div>
+        }
+    </div>
+}
+<br/>
+<h4>저장된 영상</h4>
+
+@if (savedVideos.Count == 0)
+{
+    <p>저장된 영상이 없습니다.</p>
+}
+else
+{
+    @foreach (var video in savedVideos)
+    {
+        <div class="row">
+            <div class="col-5">
+                <div class="row">
+                    <img src="@video.Thumbnail" class="rounded float-start" style="width:320px; height:190px">
+                </div>
+            </div>
+            <div class="col-7">
+                <div class="row">
+                    @video.ParentClassification > @video.Classification
+                </div>
+                <br/>
+                <h5>@video.Title</h5>
+                <br/>
+                <p>@video.Introduction</p>
+            </div>
+        </div>
+    }
+}
+
+
+@code {
+    private List<SavedVideoInfo> recentlyVideos = new();
+    private List<SavedVideoInfo> savedVideos = new();
+    private int numerOfVideos = 6;
+
+    protected override async Task OnInitializedAsync()
+    {
+        recentlyVideos = await LocalStorage.GetItemAsync<List<SavedVideoInfo>>("recentlyVideos") ?? new();
+        savedVideos = await LocalStorage.GetItemAsync<List<SavedVideoInfo>>("savedVideos") ?? new();
+
+        recentlyVideos = recentlyVideos.OrderByDescending(video => DateTime.ParseExact(video.Date, "yyyy-MM-dd HH:mm:ss", null))
+            .ToList();
+
+        if (recentlyVideos.Count > 6)
+        {
+            recentlyVideos = recentlyVideos.GetRange(0, numerOfVideos);
+        }
+
+        savedVideos = savedVideos.OrderByDescending(video => DateTime.ParseExact(video.Date, "yyyy-MM-dd HH:mm:ss", null))
+            .ToList();
+    }
+}

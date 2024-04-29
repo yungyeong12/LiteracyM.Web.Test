@@ -1,0 +1,45 @@
+{
+  "Files": [
+    {
+      "Id": "C:\\Users\\gim-yungyeong\\source\\repos\\LiteracyWebApiTest\\LiteracyWebApiTest\\LiteracyWebApiTest\\wwwroot\\._.DS_Store",
+      "PackagePath": "staticwebassets\\._.DS_Store"
+    },
+    {
+      "Id": "C:\\Users\\gim-yungyeong\\source\\repos\\LiteracyWebApiTest\\LiteracyWebApiTest\\LiteracyWebApiTest\\wwwroot\\app.css",
+      "PackagePath": "staticwebassets\\app.css"
+    },
+    {
+      "Id": "C:\\Users\\gim-yungyeong\\source\\repos\\LiteracyWebApiTest\\LiteracyWebApiTest\\LiteracyWebApiTest\\wwwroot\\bootstrap\\bootstrap.min.css",
+      "PackagePath": "staticwebassets\\bootstrap\\bootstrap.min.css"
+    },
+    {
+      "Id": "C:\\Users\\gim-yungyeong\\source\\repos\\LiteracyWebApiTest\\LiteracyWebApiTest\\LiteracyWebApiTest\\wwwroot\\bootstrap\\bootstrap.min.css.map",
+      "PackagePath": "staticwebassets\\bootstrap\\bootstrap.min.css.map"
+    },
+    {
+      "Id": "C:\\Users\\gim-yungyeong\\source\\repos\\LiteracyWebApiTest\\LiteracyWebApiTest\\LiteracyWebApiTest\\wwwroot\\favicon.png",
+      "PackagePath": "staticwebassets\\favicon.png"
+    },
+    {
+      "Id": "C:\\Users\\gim-yungyeong\\source\\repos\\LiteracyWebApiTest\\LiteracyWebApiTest\\LiteracyWebApiTest\\wwwroot\\lib\\syncfusion.css",
+      "PackagePath": "staticwebassets\\lib\\syncfusion.css"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.LiteracyWebApiTest.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.build.LiteracyWebApiTest.props",
+      "PackagePath": "build\\LiteracyWebApiTest.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildMultiTargeting.LiteracyWebApiTest.props",
+      "PackagePath": "buildMultiTargeting\\LiteracyWebApiTest.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildTransitive.LiteracyWebApiTest.props",
+      "PackagePath": "buildTransitive\\LiteracyWebApiTest.props"
+    }
+  ],
+  "ElementsToRemove": []
+}

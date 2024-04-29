@@ -1,0 +1,87 @@
+﻿@inject HttpClient HttpClient
+
+<h3>약물 상세정보</h3>
+
+@if (_medicalHistoryDrugInfo is not null)
+{
+    @foreach(var drugDetail in _medicalHistoryDrugInfo.OrderHistoryDrugs)
+    {
+        <div class="row">
+            <div class="col-6">
+                <img src="@drugDetail.ImageUri" style="width:300px; height:170px" />
+            </div>
+            <div class="col-6">
+                <h6>@drugDetail.DrugName</h6>
+                <p>@drugDetail.DispensingStartDate~@drugDetail.DispensingEndDate @drugDetail.Content | @drugDetail.DailyDosesNumber 회</p>
+                <p>@drugDetail.EffectSummary</p>
+                <p>복용 기간 @drugDetail.TotalDosingDays/365일</p>
+            </div>
+        </div>
+
+        <div>
+            <button @onclick="ShowEffect">효능효과</button>
+            <button @onclick="ShowInfo">복약안내</button>
+            <button @onclick="ShowDescription">약품설명</button>
+        </div>
+
+        <div style="white-space: pre-line">
+            @if (_currentContent == "효능효과")
+            {
+                @_drugDetails.FirstOrDefault(detail => detail.DrugName == @drugDetail.DrugName)?.EffectSummary
+            }
+            else if (_currentContent == "복약안내")
+            {
+                @_drugDetails.FirstOrDefault(detail => detail.DrugName == @drugDetail.DrugName)?.MedicationInformation;
+            }
+            else if (_currentContent == "약품설명")
+            {
+                @_drugDetails.FirstOrDefault(detail => detail.DrugName == @drugDetail.DrugName)?.DrugIngredientName
+                @_drugDetails.FirstOrDefault(detail => detail.DrugName == @drugDetail.DrugName)?.DrugIngredientName
+                @_drugDetails.FirstOrDefault(detail => detail.DrugName == @drugDetail.DrugName)?.DrugIngredientName
+            }
+        </div>
+        <br/>
+    }
+}
+
+@code {
+    private MedicalHistoryDrugInfo? _medicalHistoryDrugInfo;
+    private List<MedicalHistoryDrugDetail> _drugDetails = new ();
+    private string? _currentContent;
+
+    [Parameter, EditorRequired]
+    public MedicalHistoryInfo.PrescriptionDrug? SelectedDrug { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _medicalHistoryDrugInfo = new();
+        if (SelectedDrug is not null)
+        {
+            _medicalHistoryDrugInfo = await HttpClient.GetFromJsonAsync<MedicalHistoryDrugInfo>($"/MyDrugs/order-histories/detail/{SelectedDrug.Id}");
+        }
+
+        foreach (var drugInfo in _medicalHistoryDrugInfo.OrderHistoryDrugs)
+        {
+            var drugDetail = await HttpClient.GetFromJsonAsync<MedicalHistoryDrugDetail>($"/MyDrugs/drug-information/{drugInfo.DrugCode}");
+            if (drugDetail is not null)
+            {
+                _drugDetails.Add(drugDetail);
+            }
+        }
+    }
+
+    private void ShowEffect()
+    {
+        _currentContent = "효능효과";
+    }
+
+    private void ShowInfo()
+    {
+        _currentContent = "복약안내";
+    }
+
+    private void ShowDescription()
+    {
+        _currentContent = "약품설명";
+    }
+}

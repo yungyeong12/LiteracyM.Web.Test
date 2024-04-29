@@ -1,0 +1,329 @@
+﻿@inject HttpClient HttpClient
+@using Syncfusion.Blazor
+@using Syncfusion.Blazor.Navigations
+@using Syncfusion.Blazor.Charts
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Buttons
+
+<div class="row">
+    <div class="col-4">
+        <h5>콜레스테롤/지질</h5>
+    </div>
+    <div class="col-4"></div>
+    <div class="col-4" align="right">
+        <button type="button" class="btn btn-outline-secondary">큰 화면으로 보기</button>
+    </div>
+</div>
+
+<div class="btn-group" role="group" aria-label="Basic outlined example">
+    <button type="button" class="btn btn-outline-dark" @onclick="() => GetDifferentPeriodDataAsync(72)">전체</button>
+    <button type="button" class="btn btn-outline-dark" @onclick="() => GetDifferentPeriodDataAsync(6)">6개월</button>
+    <button type="button" class="btn btn-outline-dark" @onclick="() => GetDifferentPeriodDataAsync(24)">24개월</button>
+</div>
+
+@if (_cholesterol is not null && _cholesterol.Data.Count > 0)
+{
+    <div class="row">
+        <p class="col-3">총 <b style="color:red">@_cholesterol.Data.Count</b>건</p>
+        <div class="col-6"></div>
+        <div class="col-3" align="right">
+            <SfSwitch @bind-Checked="@isChecked" ValueChange="Change" TChecked="bool"></SfSwitch>
+        </div>
+    </div>
+    <br/>
+
+    @if (_cholesterolPivotData is not null)
+    {
+        <SfTab CssClass=@("default-tab ")>
+            <TabAnimationSettings>
+                <TabAnimationPrevious Effect=AnimationEffect.None></TabAnimationPrevious>
+                <TabAnimationNext Effect=AnimationEffect.None></TabAnimationNext>
+            </TabAnimationSettings>
+            <TabItems>
+                <TabItem>
+                    <ChildContent>
+                        <TabHeader Text="콜레스테롤"></TabHeader>
+                    </ChildContent>
+                    <ContentTemplate>
+                        <SfChart>
+                            <ChartArea><ChartAreaBorder Width="0"></ChartAreaBorder></ChartArea>
+                            <ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.DateTime">
+                                <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                            </ChartPrimaryXAxis>
+                            <ChartPrimaryYAxis Minimum="0" Maximum="250" Interval="50">
+                                <ChartAxisLineStyle Width="0"></ChartAxisLineStyle>
+                                <ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+                            </ChartPrimaryYAxis>
+
+                            <ChartSeriesCollection>
+                                <ChartSeries DataSource="@_cholesterolPivotData.GraphTypeData.FirstOrDefault(item => item.Type == "totalCholesterol")?.Data"
+                                             Name="전체" XName="Date" Width="2" Opacity="1" YName="Value" Fill="red" Type="ChartSeriesType.Line">
+                                    <ChartMarker Visible="true" Width="6" Height="6" Shape="ChartShape.Circle">
+                                    </ChartMarker>
+                                </ChartSeries>
+                                <ChartSeries DataSource="@_cholesterolPivotData.GraphTypeData.FirstOrDefault(item => item.Type == "ldlCholesterol")?.Data"
+                                             Name="LDL" XName="Date" Width="2" Opacity="1" YName="Value" Fill="orange" Type="ChartSeriesType.Line">
+                                    <ChartMarker Visible="true" Width="6" Height="6" Shape="ChartShape.Circle">
+                                    </ChartMarker>
+                                </ChartSeries>
+                                <ChartSeries DataSource="@_cholesterolPivotData.GraphTypeData.FirstOrDefault(item => item.Type == "hdlCholesterol")?.Data"
+                                             Name="HDL" XName="Date" Width="2" Opacity="1" YName="Value" Fill="green" Type="ChartSeriesType.Line">
+                                    <ChartMarker Visible="true" Width="6" Height="6" Shape="ChartShape.Circle">
+                                    </ChartMarker>
+                                </ChartSeries>
+                            </ChartSeriesCollection>
+
+                            <ChartLegendSettings Visible="true" Position="LegendPosition.Top" Alignment="Syncfusion.Blazor.Charts.Alignment.Far">
+                            </ChartLegendSettings>
+                        </SfChart>
+                    </ContentTemplate>
+                </TabItem>
+                <TabItem>
+                    <ChildContent>
+                        <TabHeader Text="중성지방"></TabHeader>
+                    </ChildContent>
+                    <ContentTemplate>
+                        <SfChart>
+                            <ChartArea><ChartAreaBorder Width="0"></ChartAreaBorder></ChartArea>
+                            <ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.DateTime">
+                                <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                            </ChartPrimaryXAxis>
+                            <ChartPrimaryYAxis Minimum="0" Maximum="250" Interval="50">
+                                <ChartAxisLineStyle Width="0"></ChartAxisLineStyle>
+                                <ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+                            </ChartPrimaryYAxis>
+
+                            <ChartSeriesCollection>
+                                <ChartSeries DataSource="@_cholesterolPivotData.GraphTypeData.FirstOrDefault(item => item.Type == "triglyceride")?.Data"
+                                             Name="중성지방" XName="Date" Width="2" Opacity="1" YName="Value" Fill="purple" Type="ChartSeriesType.Line">
+                                    <ChartMarker Visible="true" Width="6" Height="6" Shape="ChartShape.Circle">
+                                    </ChartMarker>
+                                </ChartSeries>
+                            </ChartSeriesCollection>
+
+                            <ChartLegendSettings Visible="true" Position="LegendPosition.Top" Alignment="Syncfusion.Blazor.Charts.Alignment.Far">
+                            </ChartLegendSettings>
+                        </SfChart>
+                    </ContentTemplate>
+                </TabItem>
+            </TabItems>
+        </SfTab>
+    }
+    <br/>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="col-lg-12 control-section">
+                <div class="content-wrapper">
+                    <div class="row">
+                        <SfGrid DataSource="@_cholesterol.Data" @ref="Grid">
+                            <GridColumns>
+                                <Syncfusion.Blazor.Grids.GridColumn HeaderText="일시" TextAlign="TextAlign.Center" Width="200">
+                                    <GridColumns>
+                                        <Syncfusion.Blazor.Grids.GridColumn Field=@nameof(CholesterolByDate.Date) TextAlign="TextAlign.Center" HeaderText="참고치"></Syncfusion.Blazor.Grids.GridColumn>
+                                    </GridColumns>
+                                </Syncfusion.Blazor.Grids.GridColumn>
+                                <Syncfusion.Blazor.Grids.GridColumn HeaderText="전체콜레스테롤" TextAlign="TextAlign.Center" Width="200">
+                                    <GridColumns>
+                                        <Syncfusion.Blazor.Grids.GridColumn Field=@nameof(CholesterolByDate.TotalCholesterol) TextAlign="TextAlign.Center" HeaderText="199이하"></Syncfusion.Blazor.Grids.GridColumn>
+                                    </GridColumns>
+                                </Syncfusion.Blazor.Grids.GridColumn>
+                                <Syncfusion.Blazor.Grids.GridColumn HeaderText="LDL 콜레스테롤" TextAlign="TextAlign.Center" Width="200">
+                                    <GridColumns>
+                                        <Syncfusion.Blazor.Grids.GridColumn Field=@nameof(CholesterolByDate.LDLCholesterol) TextAlign="TextAlign.Center" HeaderText="100이하"></Syncfusion.Blazor.Grids.GridColumn>
+                                    </GridColumns>
+                                </Syncfusion.Blazor.Grids.GridColumn>
+                                <Syncfusion.Blazor.Grids.GridColumn HeaderText="HDL 콜레스테롤" TextAlign="TextAlign.Center" Width="200">
+                                    <GridColumns>
+                                        <Syncfusion.Blazor.Grids.GridColumn Field=@nameof(CholesterolByDate.HDLCholesterol) TextAlign="TextAlign.Center" HeaderText="40이하"></Syncfusion.Blazor.Grids.GridColumn>
+                                    </GridColumns>
+                                </Syncfusion.Blazor.Grids.GridColumn>
+                                <Syncfusion.Blazor.Grids.GridColumn HeaderText="중성지방" TextAlign="TextAlign.Center" Width="200">
+                                    <GridColumns>
+                                        <Syncfusion.Blazor.Grids.GridColumn Field=@nameof(CholesterolByDate.Triglyceride) TextAlign="TextAlign.Center" HeaderText="149이하"></Syncfusion.Blazor.Grids.GridColumn>
+                                    </GridColumns>
+                                </Syncfusion.Blazor.Grids.GridColumn>
+                            </GridColumns>
+                        </SfGrid>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (_cholesterolLiteracy is not null)
+{
+    <div class="card">
+        <div class="card-body">
+            <h6 class="card-title">@_cholesterolLiteracy.LiteracyName</h6>
+            <hr />
+            <p>@_cholesterolLiteracy.LiteracyContent</p>
+        </div>
+    </div>
+    <br />
+
+    <div class="row">
+        @foreach (var youtubeContents in _cholesterolLiteracy.YoutubeContentList)
+        {
+            <div class="col-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <img src="@youtubeContents.Thumbnail" class="rounded float-start" style="width:220px; height:130px">
+                        </div>
+                        <br />
+                        <h6 class="card-title">@youtubeContents.Title</h6>
+                        <p>@youtubeContents.Introduction</p>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+
+@code {
+    private CholesterolData? _cholesterol;
+    private LiteracyInfo? _cholesterolLiteracy;
+    private PivotData? _cholesterolPivotData;
+    private decimal? totalCholesterolGlobalUnit;
+    private decimal? ldlGlobalUnit;
+    private decimal? hdlGlobalUnit;
+    private decimal? triglycerideGlobalUnit;
+    private bool isChecked = false;
+    private readonly DateTime _toDate = DateTime.Now;
+    private DateTime _fromDate = DateCalculate.CalculatePreviousMonthDate(72);
+    private SfGrid<CholesterolByDate> Grid;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _cholesterol = await HttpClient.GetFromJsonAsync<CholesterolData>($"/MyHealth/cholesterol/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}/1/10");
+        _cholesterolLiteracy = await HttpClient.GetFromJsonAsync<LiteracyInfo>("/MyHealth/literacy-information/cholesterol");
+        _cholesterolPivotData = await HttpClient.GetFromJsonAsync<PivotData>($"/MyHealth/graph/cholesterol/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}");
+
+        foreach (var youtubeContents in _cholesterolLiteracy.YoutubeContentList)
+        {
+            youtubeContents.Thumbnail = $"https://i.ytimg.com/vi/{youtubeContents.VideoId}/hqdefault.jpg";
+        }
+
+        var result = await HttpClient.GetFromJsonAsync<ExamItemUnitsModel[]>($"/Unit/ExamItemUnits/{RecordDivisions.건강검진결과}");
+        totalCholesterolGlobalUnit = result.FirstOrDefault(item => item.KoreanName == "총콜레스테롤").Units.FirstOrDefault().RateToSIUnit;
+        ldlGlobalUnit = result.FirstOrDefault(item => item.KoreanName == "저밀도 콜레스테롤").Units.FirstOrDefault().RateToSIUnit;
+        hdlGlobalUnit = result.FirstOrDefault(item => item.KoreanName == "고밀도 콜레스테롤").Units.FirstOrDefault().RateToSIUnit;
+        triglycerideGlobalUnit = result.FirstOrDefault(item => item.KoreanName == "중성지방").Units.FirstOrDefault().RateToSIUnit;
+    }
+
+    public async void GetDifferentPeriodDataAsync(int months)
+    {
+        _fromDate = DateCalculate.CalculatePreviousMonthDate(months);
+
+        _cholesterol = await HttpClient.GetFromJsonAsync<CholesterolData>($"/MyHealth/cholesterol/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}/1/10");
+        _cholesterolPivotData = await HttpClient.GetFromJsonAsync<PivotData>($"/MyHealth/graph/cholesterol/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}");
+
+        StateHasChanged();
+    }
+
+    private async void Change(Syncfusion.Blazor.Buttons.ChangeEventArgs<bool> args)
+    {
+        if (args.Checked == true)
+        {
+            foreach (var data in _cholesterol.Data)
+            {
+                if (data.TotalCholesterol != "-")
+                {
+                    data.TotalCholesterol = (decimal.Parse(data.TotalCholesterol) * totalCholesterolGlobalUnit).ToString().TrimEnd('0');
+                    if (data.TotalCholesterol.EndsWith("."))
+                    {
+                        data.TotalCholesterol = data.TotalCholesterol.TrimEnd('.');
+                    }
+                }
+
+                if (data.HDLCholesterol != "-")
+                {
+                    data.HDLCholesterol = (decimal.Parse(data.HDLCholesterol) * hdlGlobalUnit).ToString().TrimEnd('0');
+                    if (data.HDLCholesterol.EndsWith("."))
+                    {
+                        data.HDLCholesterol = data.HDLCholesterol.TrimEnd('.');
+                    }
+                }
+
+                if (data.LDLCholesterol != "-")
+                {
+                    data.LDLCholesterol = (decimal.Parse(data.LDLCholesterol) * ldlGlobalUnit).ToString().TrimEnd('0');
+                    if (data.LDLCholesterol.EndsWith("."))
+                    {
+                        data.LDLCholesterol = data.LDLCholesterol.TrimEnd('.');
+                    }
+                }
+
+                if (data.Triglyceride != "-")
+                {
+                    data.Triglyceride = (decimal.Parse(data.Triglyceride) * triglycerideGlobalUnit).ToString().TrimEnd('0');
+                    if (data.Triglyceride.EndsWith("."))
+                    {
+                        data.Triglyceride = data.Triglyceride.TrimEnd('.');
+                    }
+                }
+
+            }
+        }
+        else
+        {
+            _cholesterol = await HttpClient.GetFromJsonAsync<CholesterolData>($"/MyHealth/cholesterol/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}/1/10");
+        }
+        StateHasChanged();
+        Grid.Refresh();
+        // Your code here.
+    }
+
+}
+
+<style>
+    .default-tab {
+        border: 1px solid #d7d7d7;
+    }
+
+    .default-tab .e-content .e-item {
+        padding: 10px;
+        text-align: justify;
+    }
+
+    .default-tab-control-section {
+        margin: 20px 20% 20px 20%;
+    }
+
+    @@media screen and (max-width: 480px) {
+        .default-tab-control-section {
+            margin: 20px 0 20px 0;
+        }
+    }
+
+    .bootstrap5 .default-tab,
+    .bootstrap5-dark .default-tab,
+    .bootstrap .default-tab,
+    .bootstrap-dark .default-tab,
+    .bootstrap4 .default-tab {
+        border: none;
+    }
+
+    .fluent .default-tab .e-content > .e-item.e-active,
+    .bootstrap5 .default-tab .e-content > .e-item.e-active,
+    .tailwind .default-tab .e-content > .e-item.e-active,
+    .material .default-tab .e-content > .e-item.e-active,
+    .bootstrap4 .default-tab .e-content > .e-item.e-active,
+    .bootstrap .default-tab .e-content > .e-item.e-active,
+    .fabric .default-tab .e-content > .e-item.e-active {
+        background: #FAF9F8;
+    }
+
+    .fluent-dark .default-tab .e-content > .e-item.e-active,
+    .bootstrap5-dark .default-tab .e-content > .e-item.e-active,
+    .tailwind-dark .default-tab .e-content > .e-item.e-active,
+    .material-dark .default-tab .e-content > .e-item.e-active,
+    .bootstrap-dark .default-tab .e-content > .e-item.e-active,
+    .fabric-dark .default-tab .e-content > .e-item.e-active,
+    .highcontrast .default-tab .e-content > .e-item.e-active {
+        background: #201F1E;
+    }
+</style>

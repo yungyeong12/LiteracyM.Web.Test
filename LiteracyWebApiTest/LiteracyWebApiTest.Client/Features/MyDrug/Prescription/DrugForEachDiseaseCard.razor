@@ -1,0 +1,31 @@
+﻿<div class="row">
+    <div class="col-4">
+        <h5>@Drug.KpicAtcDepthName</h5>
+    </div>
+    <div class="col-1"></div>
+    <div class="col-2">
+        <p>총 @Drug.DrugDetails.Count()건</p>
+    </div>
+</div>
+
+<div class="card" style="width: 18rem;" @onclick="@(async () => await OnSelected.InvokeAsync(@Drug))">
+    <div class="card-body">
+        @foreach (var drugDetail in @Drug.DrugDetails)
+        {
+            <p>@drugDetail.PrescriptionDrugName</p>
+            @foreach(var month in @drugDetail.Months)
+            {
+                <span>@month</span>
+            }
+            <br />
+        }
+    </div>
+</div>
+<br/>
+
+@code {
+    [Parameter, EditorRequired]
+    public DrugInfoForEachDisease Drug { get; set; } = default!;
+    [Parameter]
+    public EventCallback<DrugInfoForEachDisease> OnSelected { get; set; }
+}

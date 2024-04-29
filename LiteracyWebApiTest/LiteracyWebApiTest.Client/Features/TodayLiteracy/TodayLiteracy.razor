@@ -1,0 +1,235 @@
+﻿@page "/today-literacy"
+@using Newtonsoft.Json
+@inject HttpClient HttpClient
+@inject NavigationManager Navigation
+@using Syncfusion.Blazor.Buttons
+
+<h3>오늘의 리터러시</h3>
+
+<div class="container text-center">
+    <div class="row">
+        <div class="col-4">
+            내약알기
+            @if (!MyDrugLiteracy.Any())
+            {
+                <p>내약알기 리터러시가 없습니다.</p>
+            }
+            @foreach (var literacy in MyDrugLiteracy)
+            {
+                <div class="card" style="width: 18rem;" @onclick="() => ChangeIsCheckedAsync(literacy)">
+                    <div class="card-body">
+                        @if (!literacy.IsChecked)
+                        {
+                            <button type="button" class="btn" data-bs-toggle="button">
+                                <SfIcon Name="IconName.Bullet2" Size="IconSize.Large" style="color:red"></SfIcon>
+                            </button>
+                        }
+                        <h5 class="card-title">@literacy.TypeName @literacy.LiteracyDate</h5>
+                        <h6 class="card-subtitle mb-2 text-body-secondary">@literacy.Title</h6>
+                        <br />
+                        @if (literacy.Type == "1")
+                        {
+                            <div class="row">
+                                <div class="col-6">
+                                    <img src="@GetValueFromDynamic(literacy, "atypeDrugImageUrl")" style="width:120px; height:80px" />
+                                    <p>@GetValueFromDynamic(literacy, "atypeDrugName")</p>
+                                    <p>@GetValueFromDynamic(literacy, "atypeDispensingDate")</p>
+                                </div>
+                                <div class="col-6">
+                                    <img src="@GetValueFromDynamic(literacy, "btypeDrugImageUrl")" style="width:120px; height:80px" />
+                                    <p>@GetValueFromDynamic(literacy, "btypeDrugName")</p>
+                                    <p>@GetValueFromDynamic(literacy, "btypeDispensingDate")</p>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <p>@GetValueFromDynamic(literacy, "literacy")</p>
+                            </div>
+                        }
+                        else if (literacy.Type == "2" || literacy.Type == "3" || literacy.Type == "4")
+                        {
+                            <div class="row">
+                                <div class="col-6">
+                                    <img src="@GetValueFromDynamic(literacy, "drugImageUrl")" style="width:120px; height:80px" />
+                                </div>
+                                <div class="col-6">
+                                    <p>@GetValueFromDynamic(literacy, "drugName")</p>
+                                    <p>@GetValueFromDynamic(literacy, "hospitalPharmacyName")</p>
+                                    <p>@GetValueFromDynamic(literacy, "dispensingDate")</p>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <p>@GetValueFromDynamic(literacy, "literacy")</p>
+                            </div>
+                        }
+                        else if (literacy.Type == "5")
+                        {
+                            <div class="row">
+                                <div class="col-6">
+                                    <img src="@GetValueFromDynamic(literacy, "drugImageUrl")" style="width:120px; height:80px" />
+                                </div>
+                                <div class="col-6">
+                                    <p>@GetValueFromDynamic(literacy, "drugName")</p>
+                                    <p>@GetValueFromDynamic(literacy, "hospitalPharmacyName")</p>
+                                    <p>@GetValueFromDynamic(literacy, "dispensingDate")</p>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <p style="color:red">추정 사구체 여과율 : @GetValueFromDynamic(literacy, "crCl")</p>
+                            </div>
+                            <div class="row">
+                                <p>@GetValueFromDynamic(literacy, "literacy")</p>
+                            </div>
+                        }
+                        else if (literacy.Type == "9")
+                        {
+                            @foreach(var drug in @GetDrugListFromDynamic(literacy))
+                            {
+                                <div class="row">
+                                    <div class="col-6">
+                                        <img src="@drug.DrugImageUrl" style="width:120px; height:80px" />
+                                    </div>
+                                    <div class="col-6">
+                                        <p>@drug.DrugName</p>
+                                        <p>@drug.HospitalPharmacyName</p>
+                                        <p>@drug.TreatDate</p>
+                                    </div>
+                                </div>
+                            }
+                            <div class="row">
+                                <p>@GetValueFromDynamic(literacy, "literacy")</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+                <br />
+            }
+            <h6>Medical Disclaimer</h6>
+            <p>이 정보는 한국의약품안전관리원 DUR 정보를 기반으로 제공됩니다.</p>
+        </div>
+        <div class="col-4">
+            건강데이터
+            @if (!HealthLiteracy.Any())
+            {
+                <p>건강데이터 리터러시가 없습니다.</p>
+            }
+            @foreach (var literacy in HealthLiteracy)
+            {
+                <div class="card" style="width: 18rem;" @onclick="() => ChangeIsCheckedAsync(literacy)">
+                    <div class="card-body">
+                        @if (!literacy.IsChecked)
+                        {
+                            <button type="button" class="btn" data-bs-toggle="button">
+                                <SfIcon Name="IconName.Bullet2" Size="IconSize.Large" style="color:red"></SfIcon>
+                            </button>
+                        }
+                        <h5 class="card-title">@literacy.TypeName @literacy.LiteracyDate</h5>
+                        <h6 class="card-subtitle mb-2 text-body-secondary">@literacy.Title</h6>
+                        <br />
+                        <p class="card-text">@GetValueFromDynamic(literacy, "literacy")</p>
+                    </div>
+                </div>
+                <br />
+            }
+        </div>
+        <div class="col-4">
+            서비스
+            @if (!ServiceLiteracy.Any())
+            {
+                <p>서비스 알림이 없습니다.</p>
+            }
+            @foreach (var literacy in ServiceLiteracy)
+            {
+                <div class="card" style="width: 18rem;" @onclick="() => ChangeIsCheckedAsync(literacy)">
+                    <div class="card-body">
+                        @if (!literacy.IsChecked)
+                        {
+                            <button type="button" class="btn" data-bs-toggle="button">
+                                <SfIcon Name="IconName.Bullet2" Size="IconSize.Large" style="color:red"></SfIcon>
+                            </button>
+                        }
+                        <h5 class="card-title">@literacy.TypeName @literacy.LiteracyDate</h5>
+                        <h6 class="card-subtitle mb-2 text-body-secondary">@literacy.Title</h6>
+                        <br />
+                        @if (literacy.Type == "7")
+                        {
+                            <p>@GetValueFromDynamic(literacy, "inquiryTypeName")</p>
+                            <br />
+                            <p>@GetValueFromDynamic(literacy, "content")</p>
+                        }
+                        else if (literacy.Type == "8")
+                        {
+                            <p>@GetValueFromDynamic(literacy, "content")</p>
+                        }
+                    </div>
+                </div>
+                <br />
+            }
+        </div>
+    </div>
+</div>
+
+
+@code {
+    private TodayLiteracyData? _todayLiteracyData;
+    public List<Literacy> MyDrugLiteracy = new();
+    public List<Literacy> HealthLiteracy = new();
+    public List<Literacy> ServiceLiteracy = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _todayLiteracyData = await HttpClient.GetFromJsonAsync<TodayLiteracyData>("/TodayLiteracy/all");
+
+        if (_todayLiteracyData is not null)
+        {
+            foreach (var literacy in _todayLiteracyData.Data)
+            {
+                var typeNumber = Int32.Parse(literacy.Type);
+
+                if ((typeNumber >= 1 && typeNumber <= 5) || typeNumber == 9)
+                {
+                    MyDrugLiteracy.Add(literacy);
+                }
+                else if (typeNumber == 10)
+                {
+                    HealthLiteracy.Add(literacy);
+                }
+                else if (typeNumber >= 6 && typeNumber <= 8)
+                {
+                    ServiceLiteracy.Add(literacy);
+                }
+            }
+        }
+    }
+
+    private async void ChangeIsCheckedAsync(Literacy literacy)
+    {
+        var addQuery = new EditIsChecked { Type = literacy.Type, Id = literacy.Id };
+        var result = await HttpClient.PostAsJsonAsync("/Notification/IsChecked", addQuery);
+
+        if (result.IsSuccessStatusCode)
+        {
+            Navigation.Refresh(true);
+        }
+    }
+
+    public string GetValueFromDynamic(Literacy literacy, string key)
+    {
+        var result = literacy.Detail.FirstOrDefault(v => v.Key == key).Value?.ToString();
+        if (result is null)
+        {
+            return "";
+        }
+        else
+        {
+            return result;
+        }
+    }
+
+    public Drug[] GetDrugListFromDynamic(Literacy literacy)
+    {
+        var drugListJson = literacy.Detail.FirstOrDefault(v => v.Key == "drugList").Value?.ToString();
+
+        var drugList = JsonConvert.DeserializeObject<Drug[]>(drugListJson);
+        return drugList;
+    }
+}

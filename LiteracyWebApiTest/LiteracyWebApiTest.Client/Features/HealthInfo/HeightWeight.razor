@@ -1,0 +1,76 @@
+﻿@inject HttpClient HttpClient
+@using Syncfusion.Blazor.Calendars
+@using Syncfusion.Blazor.Inputs
+
+<h6>측정시점</h6>
+
+<form method="post" @onsubmit="SaveHeightWeightAsync">
+    <div class="row">
+        <div class="col-8"></div>
+        <div class="col-4">
+            <SfDatePicker TValue="DateTime" FullScreen="true" Format="yyyy.MM.dd dddd" ShowClearButton="true" @bind-Value="@_inputDate"></SfDatePicker>
+        </div>
+    </div>
+    <br />
+
+    <div class="row">
+        <div class="col-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <h5 class="card-title col-4"><Icon Name="IconName.FileEarmarkBarGraphFill" Size="IconSize.x2" Color="IconColor.Success" /> 키 </h5>
+                        <div class="col-2"></div>
+                        <div class="mb-3 col-4">
+                            <SfNumericTextBox TValue="double?" Placeholder="165.5" ShowSpinButton="false" @bind-Value="@_height"></SfNumericTextBox>
+                        </div>
+                        <h6 class="col-2">cm</h6>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <h5 class="card-title col-4"><Icon Name="IconName.Speedometer2" Size="IconSize.x2" Color="IconColor.Success" /> 체중 </h5>
+                        <div class="col-2"></div>
+                        <div class="mb-3 col-4">
+                            <SfNumericTextBox TValue="double?" Placeholder="55.5" ShowSpinButton="false" @bind-Value="@_weight"></SfNumericTextBox>
+                        </div>
+                        <h6 class="col-2">kg</h6>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <br />
+
+    <div class="row">
+        <div class="col-10"></div>
+        <div class="col-2 align-right">
+            <button type="submit" class="btn btn-danger">저장하기</button>
+        </div>
+    </div>
+</form>
+
+@code {
+    private DateTime _inputDate = DateTime.Now;
+    private double? _height;
+    private double? _weight;
+
+    private async void SaveHeightWeightAsync()
+    {
+        var addQuery = new HeightWeightData() { InputDateTime = _inputDate.ToString("yyyy-MM-dd HH:mm"), Height = _height, Weight = _weight };
+
+        var result = await HttpClient.PostAsJsonAsync("/MyHealth/height-with-weight", addQuery);
+
+        if (result.IsSuccessStatusCode)
+        {
+            _inputDate = DateTime.Now;
+            _height = null;
+            _weight = null;
+
+            StateHasChanged();
+        }
+    }
+}

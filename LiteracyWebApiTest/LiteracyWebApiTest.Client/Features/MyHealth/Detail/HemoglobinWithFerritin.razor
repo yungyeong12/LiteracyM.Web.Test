@@ -1,0 +1,321 @@
+﻿@inject HttpClient HttpClient
+@using Syncfusion.Blazor
+@using Syncfusion.Blazor.Navigations
+@using Syncfusion.Blazor.Charts
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Buttons
+
+<div class="row">
+    <div class="col-4">
+        <h5>혈색소/페리틴</h5>
+    </div>
+    <div class="col-4"></div>
+    <div class="col-4" align="right">
+        <button type="button" class="btn btn-outline-secondary">큰 화면으로 보기</button>
+    </div>
+</div>
+
+<div class="btn-group" role="group" aria-label="Basic outlined example">
+    <button type="button" class="btn btn-outline-dark" @onclick="() => GetDifferentPeriodDataAsync(72)">전체</button>
+    <button type="button" class="btn btn-outline-dark" @onclick="() => GetDifferentPeriodDataAsync(6)">6개월</button>
+    <button type="button" class="btn btn-outline-dark" @onclick="() => GetDifferentPeriodDataAsync(24)">24개월</button>
+</div>
+
+@if (_hemoglobinWithFerritin is not null && _hemoglobinWithFerritin.Data.Count > 0)
+{
+    <div class="row">
+        <p class="col-3">총 <b style="color:red">@_hemoglobinWithFerritin.Data.Count</b>건</p>
+        <div class="col-6"></div>
+        <div class="col-3" align="right">
+            <SfSwitch @bind-Checked="@isChecked" ValueChange="Change" TChecked="bool"></SfSwitch>
+        </div>
+    </div>
+    <br/>
+
+    @if (_hWFPivotData is not null)
+    {
+        <SfTab CssClass=@("default-tab ")>
+            <TabAnimationSettings>
+                <TabAnimationPrevious Effect=AnimationEffect.None></TabAnimationPrevious>
+                <TabAnimationNext Effect=AnimationEffect.None></TabAnimationNext>
+            </TabAnimationSettings>
+            <TabItems>
+                <TabItem>
+                    <ChildContent>
+                        <TabHeader Text="혈색소"></TabHeader>
+                    </ChildContent>
+                    <ContentTemplate>
+                        <SfChart>
+                            <ChartArea><ChartAreaBorder Width="0"></ChartAreaBorder></ChartArea>
+                            <ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.DateTime">
+                                <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                            </ChartPrimaryXAxis>
+
+                            <ChartPrimaryYAxis Minimum="0" Maximum="20" Interval="5">
+                                <ChartAxisLineStyle Width="0"></ChartAxisLineStyle>
+                                <ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+                                <ChartStriplines>
+                                    <ChartStripline Start="13" End="17" Opacity="0.5" Color="#fcb3b1" Visible="true">
+                                        <ChartStriplineBorder Width="0"></ChartStriplineBorder>
+                                    </ChartStripline>
+                                </ChartStriplines>
+                            </ChartPrimaryYAxis>
+
+                            <ChartSeriesCollection>
+                                <ChartSeries DataSource="@_hWFPivotData.GraphTypeData.FirstOrDefault(item => item.Type == "hemoglobin")?.Data"
+                                             Name="혈색소" XName="Date" Width="2" Opacity="1" YName="Value" Fill="red" Type="ChartSeriesType.Line">
+                                    <ChartMarker Visible="true" Width="6" Height="6" Shape="ChartShape.Circle">
+                                    </ChartMarker>
+                                </ChartSeries>
+                            </ChartSeriesCollection>
+
+                            <ChartLegendSettings Visible="true" Position="LegendPosition.Top" Alignment="Syncfusion.Blazor.Charts.Alignment.Far">
+                            </ChartLegendSettings>
+                        </SfChart>
+                    </ContentTemplate>
+                </TabItem>
+                <TabItem>
+                    <ChildContent>
+                        <TabHeader Text="페리틴"></TabHeader>
+                    </ChildContent>
+                    <ContentTemplate>
+                        <SfChart>
+                            <ChartArea><ChartAreaBorder Width="0"></ChartAreaBorder></ChartArea>
+                            <ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.DateTime">
+                                <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                            </ChartPrimaryXAxis>
+                            <ChartPrimaryYAxis Minimum="0" Maximum="600" Interval="100">
+                                <ChartAxisLineStyle Width="0"></ChartAxisLineStyle>
+                                <ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+                                <ChartStriplines>
+                                    <ChartStripline Start="0" End="400" Opacity="0.5" Color="#dee9fa" Visible="true">
+                                        <ChartStriplineBorder Width="0"></ChartStriplineBorder>
+                                    </ChartStripline>
+                                </ChartStriplines>
+                            </ChartPrimaryYAxis>
+
+                            <ChartSeriesCollection>
+                                <ChartSeries DataSource="@_hWFPivotData.GraphTypeData.FirstOrDefault(item => item.Type == "ferritin")?.Data"
+                                             Name="페리틴" XName="Date" Width="2" Opacity="1" YName="Value" Fill="blue" Type="ChartSeriesType.Line">
+                                    <ChartMarker Visible="true" Width="6" Height="6" Shape="ChartShape.Circle">
+                                    </ChartMarker>
+                                </ChartSeries>
+                            </ChartSeriesCollection>
+
+                            <ChartLegendSettings Visible="true" Position="LegendPosition.Top" Alignment="Syncfusion.Blazor.Charts.Alignment.Far">
+                            </ChartLegendSettings>
+                        </SfChart>
+                    </ContentTemplate>
+                </TabItem>
+            </TabItems>
+        </SfTab>
+    }
+
+    <br/>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="col-lg-12 control-section">
+                <div class="content-wrapper">
+                    <div class="row">
+                        <SfGrid DataSource="@_hemoglobinWithFerritin.Data" @ref="Grid">
+                            <GridColumns>
+                                <Syncfusion.Blazor.Grids.GridColumn HeaderText="일시" TextAlign="TextAlign.Center" Width="200">
+                                    <GridColumns>
+                                        <Syncfusion.Blazor.Grids.GridColumn Field=@nameof(HemoglobinWithFerritinByDate.Date) TextAlign="TextAlign.Center" HeaderText="참고치"></Syncfusion.Blazor.Grids.GridColumn>
+                                    </GridColumns>
+                                </Syncfusion.Blazor.Grids.GridColumn>
+                                <Syncfusion.Blazor.Grids.GridColumn HeaderText="혈색소(Hb)" TextAlign="TextAlign.Center" Width="200">
+                                    <GridColumns>
+                                        <Syncfusion.Blazor.Grids.GridColumn Field=@nameof(HemoglobinWithFerritinByDate.Hemoglobin) TextAlign="TextAlign.Center" HeaderText=@GetHemoglobinHeaderText(isChecked)></Syncfusion.Blazor.Grids.GridColumn>
+                                    </GridColumns>
+                                </Syncfusion.Blazor.Grids.GridColumn>
+                                <Syncfusion.Blazor.Grids.GridColumn HeaderText="페리틴" TextAlign="TextAlign.Center" Width="200">
+                                    <GridColumns>
+                                        <Syncfusion.Blazor.Grids.GridColumn Field=@nameof(HemoglobinWithFerritinByDate.Ferritin) TextAlign="TextAlign.Center" HeaderText=@GetFerritinHeaderText(isChecked)></Syncfusion.Blazor.Grids.GridColumn>
+                                    </GridColumns>
+                                </Syncfusion.Blazor.Grids.GridColumn>
+                            </GridColumns>
+                        </SfGrid>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (_hemoglobinWithFerritinLiteracy is not null)
+{
+    <div class="card">
+        <div class="card-body">
+            <h6 class="card-title">@_hemoglobinWithFerritinLiteracy.LiteracyName</h6>
+            <hr />
+            <p>@_hemoglobinWithFerritinLiteracy.LiteracyContent</p>
+        </div>
+    </div>
+    <br />
+
+    <div class="row">
+        @foreach (var youtubeContents in _hemoglobinWithFerritinLiteracy.YoutubeContentList)
+        {
+            <div class="col-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <img src="@youtubeContents.Thumbnail" class="rounded float-start" style="width:220px; height:130px">
+                        </div>
+                        <br />
+                        <h6 class="card-title">@youtubeContents.Title</h6>
+                        <p>@youtubeContents.Introduction</p>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+
+@code {
+    private HemoglobinWithFerritinData? _hemoglobinWithFerritin;
+    private LiteracyInfo? _hemoglobinWithFerritinLiteracy;
+    private PivotData? _hWFPivotData;
+    private bool isChecked = false;
+    private decimal? hemoglobinGlobalUnit;
+    private decimal? ferritinGlobalUnit;
+    private readonly DateTime _toDate = DateTime.Now;
+    private DateTime _fromDate = DateCalculate.CalculatePreviousMonthDate(72);
+    private SfGrid<HemoglobinWithFerritinByDate> Grid;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _hemoglobinWithFerritin = await HttpClient.GetFromJsonAsync<HemoglobinWithFerritinData>($"/MyHealth/hemoglobin-with-ferritin/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}/1/10");
+        _hemoglobinWithFerritinLiteracy = await HttpClient.GetFromJsonAsync<LiteracyInfo>("/MyHealth/literacy-information/hemoglobin-with-ferritin");
+        _hWFPivotData = await HttpClient.GetFromJsonAsync<PivotData>($"/MyHealth/graph/hemoglobin-with-ferritin/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}");
+
+        foreach (var youtubeContents in _hemoglobinWithFerritinLiteracy.YoutubeContentList)
+        {
+            youtubeContents.Thumbnail = $"https://i.ytimg.com/vi/{youtubeContents.VideoId}/hqdefault.jpg";
+        }
+
+        var result = await HttpClient.GetFromJsonAsync<ExamItemUnitsModel[]>($"/Unit/ExamItemUnits/{RecordDivisions.건강검진결과}");
+        hemoglobinGlobalUnit = result.FirstOrDefault(item => item.KoreanName == "혈색소").Units.FirstOrDefault().RateToSIUnit;
+        ferritinGlobalUnit = result.FirstOrDefault(item => item.KoreanName == "철분(ferritin)").Units.FirstOrDefault().RateToSIUnit;
+    }
+
+    public async void GetDifferentPeriodDataAsync(int months)
+    {
+        _fromDate = DateCalculate.CalculatePreviousMonthDate(months);
+
+        _hemoglobinWithFerritin = await HttpClient.GetFromJsonAsync<HemoglobinWithFerritinData>($"/MyHealth/hemoglobin-with-ferritin/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}/1/10");
+        _hWFPivotData = await HttpClient.GetFromJsonAsync<PivotData>($"/MyHealth/graph/hemoglobin-with-ferritin/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}");
+
+        StateHasChanged();
+    }
+
+    private async void Change(Syncfusion.Blazor.Buttons.ChangeEventArgs<bool> args)
+    {
+        if (args.Checked == true)
+        {
+            foreach (var data in _hemoglobinWithFerritin.Data)
+            {
+                if (data.Ferritin != "-")
+                {
+                    data.Ferritin = (decimal.Parse(data.Ferritin) * ferritinGlobalUnit).ToString().TrimEnd('0');
+                    if (data.Ferritin.EndsWith("."))
+                    {
+                        data.Ferritin = data.Ferritin.TrimEnd('.');
+                    }
+                }
+
+                if (data.Hemoglobin != "-")
+                {
+                    data.Hemoglobin = (decimal.Parse(data.Hemoglobin) * hemoglobinGlobalUnit).ToString().TrimEnd('0');
+                    if (data.Hemoglobin.EndsWith("."))
+                    {
+                        data.Hemoglobin = data.Hemoglobin.TrimEnd('.');
+                    }
+                }
+            }
+        }
+        else
+        {
+            _hemoglobinWithFerritin = await HttpClient.GetFromJsonAsync<HemoglobinWithFerritinData>($"/MyHealth/hemoglobin-with-ferritin/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}/1/10");
+        }
+        StateHasChanged();
+        Grid.Refresh();
+        // Your code here.
+    }
+
+    private string GetHemoglobinHeaderText(bool isChecked)
+    {
+        if (isChecked)
+        {
+            return "여성 120~150";
+        }
+        else
+        {
+            return "여성 12~15";
+        }
+    }
+
+    private string GetFerritinHeaderText(bool isChecked)
+    {
+        if (isChecked)
+        {
+            return "여성 29.2~337.0";
+        }
+        else
+        {
+            return "여성 13~150";
+        }
+    }
+}
+
+<style>
+    .default-tab {
+        border: 1px solid #d7d7d7;
+    }
+
+        .default-tab .e-content .e-item {
+            padding: 10px;
+            text-align: justify;
+        }
+
+    .default-tab-control-section {
+        margin: 20px 20% 20px 20%;
+    }
+
+    @@media screen and (max-width: 480px) {
+        .default-tab-control-section {
+            margin: 20px 0 20px 0;
+        }
+    }
+
+    .bootstrap5 .default-tab,
+    .bootstrap5-dark .default-tab,
+    .bootstrap .default-tab,
+    .bootstrap-dark .default-tab,
+    .bootstrap4 .default-tab {
+        border: none;
+    }
+
+    .fluent .default-tab .e-content > .e-item.e-active,
+    .bootstrap5 .default-tab .e-content > .e-item.e-active,
+    .tailwind .default-tab .e-content > .e-item.e-active,
+    .material .default-tab .e-content > .e-item.e-active,
+    .bootstrap4 .default-tab .e-content > .e-item.e-active,
+    .bootstrap .default-tab .e-content > .e-item.e-active,
+    .fabric .default-tab .e-content > .e-item.e-active {
+        background: #FAF9F8;
+    }
+
+    .fluent-dark .default-tab .e-content > .e-item.e-active,
+    .bootstrap5-dark .default-tab .e-content > .e-item.e-active,
+    .tailwind-dark .default-tab .e-content > .e-item.e-active,
+    .material-dark .default-tab .e-content > .e-item.e-active,
+    .bootstrap-dark .default-tab .e-content > .e-item.e-active,
+    .fabric-dark .default-tab .e-content > .e-item.e-active,
+    .highcontrast .default-tab .e-content > .e-item.e-active {
+        background: #201F1E;
+    }
+</style>

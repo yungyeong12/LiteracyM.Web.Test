@@ -1,0 +1,155 @@
+﻿@using System.ComponentModel.Design
+@using LiteracyWebApiTest.Client.Features.CustomerCenter
+@using Microsoft.Win32.SafeHandles
+@inject HttpClient HttpClient
+
+<h3>약물 상세정보</h3>
+
+@if (_activeDrug is not null)
+{
+    <div class="row">
+        <div class="col-6">
+            <img src="@_activeDrug.ImageUrl" style="width:300px; height:170px" />
+        </div>
+        <div class="col-6">
+            <h6>@_activeDrug.PrescriptionDrugName</h6>
+            <p>@_activeDrug.DispensingDate @_activeDrug.Content | @_activeDrug.DailyDosesNumber 회</p>
+            <p>@_activeDrug.EffectSummary</p>
+            복용 중인 약인가요?
+            @if (_activeDrug.IsTaking)
+            {
+                <button type="button" class="btn btn-danger" @onclick="() => ChangeIsTakingAsync(false)">복용</button>
+            }
+            else
+            {
+                <button type="button" class="btn-outline-danger" @onclick="() => ChangeIsTakingAsync(true)">미복용</button>
+            }
+            <div class="d-grid gap-2 d-md-block">
+                @foreach (var i in Enumerable.Range(0, 5))
+                {
+                    @if (_booleanReminderSettings[i])
+                    {
+                        <button type="button" class="btn btn-outline-danger" @onclick='() => ChangeDrugReminderAsync(i, "minus")'>@_reminderSettings[i]</button>
+                    }
+
+                    else
+                    {
+                        <button type="button" class="btn btn-outline-dark" @onclick='() => ChangeDrugReminderAsync(i, "plus")'>@_reminderSettings[i]</button>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <button @onclick="ShowEffect">효능효과</button>
+        <button @onclick="ShowInfo">복약안내</button>
+        <button @onclick="ShowDescription">약품설명</button>
+    </div>
+
+    <div style="white-space: pre-line">
+        @_currentContent
+    </div>
+}
+
+@code {
+    private DrugInfo? _activeDrug;
+    private DrugInfoDetail? _drugDetail;
+    private string? _currentContent;
+    private string[] _reminderSettings = ["기상 후", "아침", "점심", "저녁", "취침 전"];
+    private bool[] _booleanReminderSettings = new bool[5];
+
+    [Parameter, EditorRequired]
+    public DrugInfo? SelectedDrug { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (SelectedDrug is not null)
+        {
+            _activeDrug = SelectedDrug;
+            _drugDetail = await HttpClient.GetFromJsonAsync<DrugInfoDetail>($"/MyDrugs/patient-detail-drug/{SelectedDrug.Id}");
+            _booleanReminderSettings = GetBooleanArrayForNumber(_activeDrug.DrugReminder);
+            ShowEffect();
+        }
+    }
+
+    private void ShowEffect()
+    {
+        _currentContent = "효능효과 \n" + _drugDetail.EffectSummary;
+    }
+
+    private void ShowInfo()
+    {
+        _currentContent = "복약안내 \n" + _drugDetail.MedicationInformation;
+    }
+
+    private void ShowDescription()
+    {
+        _currentContent = "성분/함량 \n" + _drugDetail.DrugIngredientName +
+                            "\n 성상 \n" + _drugDetail.IdentificationMark +
+                            "\n 저장방법 \n" + _drugDetail.Storage;
+    }
+
+    private async void ChangeIsTakingAsync(bool isTaking)
+    {
+        var addQuery = new EditIsTaking { Id = _activeDrug.Id, Note = "", IsTaking = isTaking };
+        var result = await HttpClient.PostAsJsonAsync("/MyDrugs/patient-detail-drug-istaking", addQuery);
+
+        if (result.IsSuccessStatusCode)
+        {
+            _activeDrug.IsTaking = !_activeDrug.IsTaking;
+            StateHasChanged();
+        }
+    }
+
+    private async void ChangeDrugReminderAsync(int index, string symbols)
+    {
+        var drugReminder = SumOfBoolArray(_booleanReminderSettings);
+        var bitValue = 1 << index;
+
+        if (symbols == "plus")
+        {
+            drugReminder += bitValue;
+        }
+        else if(symbols == "minus")
+        {
+            drugReminder -= bitValue;
+        }
+
+        var addQuery = new EditDrugReminder { Id = _activeDrug.Id, DrugReminder = drugReminder };
+        var result = await HttpClient.PostAsJsonAsync("/MyDrugs/patient-drug-reminder", addQuery);
+
+        if (result.IsSuccessStatusCode)
+        {
+            _activeDrug.DrugReminder = (byte)drugReminder;
+            _booleanReminderSettings = GetBooleanArrayForNumber(drugReminder);
+            StateHasChanged();
+        }
+    }
+
+    private bool[] GetBooleanArrayForNumber(int number)
+    {
+        var boolArray = new bool[5];
+
+        for (var i = 0; i < boolArray.Length; i++)
+        {
+            var bitValue = 1 << i;
+            boolArray[i] = (number & bitValue) != 0;
+        }
+
+        return boolArray;
+    }
+
+    private int SumOfBoolArray(bool[] boolArray)
+    {
+        var sum = 0;
+        for (var i = 0; i < boolArray.Length; i++)
+        {
+            if (boolArray[i])
+            {
+                sum += (int)Math.Pow(2, i);
+            }
+        }
+        return sum;
+    }
+}

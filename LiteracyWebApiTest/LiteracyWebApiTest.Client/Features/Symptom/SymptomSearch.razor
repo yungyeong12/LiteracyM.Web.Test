@@ -1,0 +1,109 @@
+﻿@page "/symptom-search"
+@using Syncfusion.Blazor.DropDowns
+@using Syncfusion.Blazor.Data
+@using Newtonsoft.Json.Linq
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+
+<h3>증상 검색하기</h3>
+<br/>
+
+<div class="row">
+    <div class="col-2"></div>
+    <div class="col-8">
+        <div class="row">
+            <form class="row" method="post" @onsubmit="GetSymptomListAsync">
+                <div class="control-section col-10">
+                    <div class="col-lg-10">
+                        <div class="control-wrapper">
+                            <SfAutoComplete TValue="string" @ref="AutocompleteObj" TItem="SymptomByKeyword" Placeholder="검색어를 입력해 주세요." DataSource="@AllSymptoms" @bind-Value="@Keyword">
+                                <AutoCompleteFieldSettings Value="Keyword"/>
+                                <AutoCompleteEvents TValue="string" TItem="SymptomByKeyword" Filtering="OnFilter"/>
+                            </SfAutoComplete>
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="col-2 btn btn-primary">검색</button>
+            </form>
+        </div>
+        
+        @if (SearchResults is not null)
+        {
+            <p>검색결과 총 <b style="color:red">@SearchResults.Count</b>건</p>
+            <br/>
+
+            @if (SearchResults.Count == 0)
+            {
+                @if (Keyword is not null && Keyword.Length > 0)
+                {
+                    <p> 검색 결과가 없습니다.</p>
+                    <br/>
+                    <button type="button" class="btn btn-danger" @onclick="AddNewSymptomAsync">'@Keyword'증상 추가하기</button>
+                }
+            }
+            else
+            {
+                @foreach (var result in SearchResults)
+                {
+                    <div class="card" @onclick='() => NavigationManager.NavigateTo($"/symptom-registration/new/{result.Code}")'>
+                        <div class="card-body">
+                            <p>@result.Keyword</p>
+                            <h6 style="color:red">@result.SimilarWord</h6>
+                            <p>@result.Description</p>
+                        </div>
+                    </div>
+                    <br/>
+                }
+            }
+        }
+    </div>
+    <div class="col-2"></div>
+</div>
+
+@code {
+    SfAutoComplete<string, SymptomByKeyword> AutocompleteObj { get; set; }
+    List<SymptomByKeyword> AllSymptoms { get; set; }
+    List<SymptomByKeyword>? SearchResults { get; set; }
+    string Keyword { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // 전체를 불러오는 API로 바꿔야 함!
+        AllSymptoms = await HttpClient.GetFromJsonAsync<List<SymptomByKeyword>>("/Symptom/keywords/auto-complete/발열");
+    }
+
+    private async Task OnFilter(FilteringEventArgs args)
+    {
+        args.PreventDefaultAction = true;
+        var query = new Query().Where(new WhereFilter() { Field = "Keyword", Operator = "contains", value = args.Text, IgnoreCase = true });
+        query = !string.IsNullOrEmpty(args.Text) ? query : new Query();
+        await AutocompleteObj.FilterAsync(AllSymptoms, query);
+    }
+
+    private async void GetSymptomListAsync()
+    {
+        SearchResults = await HttpClient.GetFromJsonAsync<List<SymptomByKeyword>>($"/Symptom/keywords/{Keyword}/codes");
+        StateHasChanged();
+    }
+
+    private async void AddNewSymptomAsync()
+    {
+        var result = await HttpClient.PostAsJsonAsync($"/Symptom/keyword?keyword={Keyword}", new {});
+
+        if (result.IsSuccessStatusCode)
+        {
+            var responseBody = await result.Content.ReadAsStringAsync();
+            var symptomCode = JObject.Parse(responseBody)["symptomCode"].ToString();
+
+            NavigationManager.NavigateTo($"/symptom-registration/new/{symptomCode}");
+        }
+    }
+}
+
+<style>
+    .control-wrapper {
+        max-width: 350px;
+        margin: 0 auto;
+        padding: 0px 0px 0px;
+    }
+</style>

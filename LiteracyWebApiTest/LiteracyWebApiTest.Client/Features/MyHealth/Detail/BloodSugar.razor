@@ -1,0 +1,509 @@
+﻿@inject HttpClient HttpClient
+@using Syncfusion.Blazor
+@using Syncfusion.Blazor.Navigations
+@using Syncfusion.Blazor.Charts
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Popups
+
+<div class="row">
+    <div class="col-4">
+        <h5>혈당</h5>
+    </div>
+    <div class="col-4"></div>
+    <div class="col-4" align="right">
+        <button type="button" class="btn btn-outline-secondary">큰 화면으로 보기</button>
+    </div>
+</div>
+
+<div class="btn-group" role="group" aria-label="Basic outlined example">
+    <button type="button" class="btn btn-outline-dark" @onclick="() => GetDifferentPeriodDataAsync(72)">전체</button>
+    <button type="button" class="btn btn-outline-dark" @onclick="() => GetDifferentPeriodDataAsync(1)">1개월</button>
+    <button type="button" class="btn btn-outline-dark" @onclick="() => GetDifferentPeriodDataAsync(3)">3개월</button>
+</div>
+
+@if (_bloodSugar is not null && _bloodSugar.Data.Count > 0)
+{
+    <p>총 <b style="color:red">@_bloodSugar.Data.Count</b>건</p>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-4">
+                    <h6>최고 혈당</h6>
+                    <h6>@_bloodSugar.MaxBloodSugar mg/dL</h6>
+                </div>
+                <div class="col-4">
+                    <h6>평균 혈당</h6>
+                    <h6>@_bloodSugar.AvgBloodSugar mg/dL</h6>
+                </div>
+                <div class="col-4">
+                    <h6>최저 혈당</h6>
+                    <h6>@_bloodSugar.MinBloodSugar mg/dL</h6>
+                </div>
+            </div>
+        </div>
+    </div>
+    <br/>
+
+    @if (_bloodSugarPivotData is not null)
+    {
+        <SfTab CssClass=@("default-tab ")>
+            <TabAnimationSettings>
+                <TabAnimationPrevious Effect=AnimationEffect.None></TabAnimationPrevious>
+                <TabAnimationNext Effect=AnimationEffect.None></TabAnimationNext>
+            </TabAnimationSettings>
+            <TabItems>
+                <TabItem>
+                    <ChildContent>
+                        <TabHeader Text="전체추세"></TabHeader>
+                    </ChildContent>
+                    <ContentTemplate>
+                        <SfChart>
+                            <ChartArea><ChartAreaBorder Width="0"></ChartAreaBorder></ChartArea>
+                            <ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.DateTime">
+                                <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                            </ChartPrimaryXAxis>
+                            <ChartPrimaryYAxis Minimum="0" Maximum="200" Interval="25">
+                                <ChartAxisLineStyle Width="0"></ChartAxisLineStyle>
+                                <ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+                            </ChartPrimaryYAxis>
+
+                            <ChartSeriesCollection>
+                                <ChartSeries DataSource="@_bloodSugarPivotData.GraphTypeData.FirstOrDefault(item => item.Type == "allBloodSugars")?.Data"
+                                             Name="전체 추세" XName="Date" Width="2" Opacity="1" YName="Value" Fill="red" Type="ChartSeriesType.Line">
+                                    <ChartMarker Visible="true" Width="6" Height="6" Shape="ChartShape.Circle">
+                                    </ChartMarker>
+                                </ChartSeries>
+                            </ChartSeriesCollection>
+                            
+                            <ChartLegendSettings Visible="true" Position="LegendPosition.Top" Alignment="Syncfusion.Blazor.Charts.Alignment.Far">
+                            </ChartLegendSettings>
+                        </SfChart>
+                    </ContentTemplate>
+                </TabItem>
+                <TabItem>
+                    <ChildContent>
+                        <TabHeader Text="식전추세"></TabHeader>
+                    </ChildContent>
+                    <ContentTemplate>
+                        <SfChart>
+                            <ChartArea><ChartAreaBorder Width="0"></ChartAreaBorder></ChartArea>
+                            <ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.DateTime">
+                                <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                            </ChartPrimaryXAxis>
+                            <ChartPrimaryYAxis Minimum="0" Maximum="200" Interval="25">
+                                <ChartAxisLineStyle Width="0"></ChartAxisLineStyle>
+                                <ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+                                
+                                <ChartStriplines>
+                                    <ChartStripline Start="73" End="125" Opacity="0.5" Color="#dee9fa" Visible="true">
+                                        <ChartStriplineBorder Width="0"></ChartStriplineBorder>
+                                    </ChartStripline>
+                                </ChartStriplines>
+                            </ChartPrimaryYAxis>
+
+                            <ChartSeriesCollection>
+                                <ChartSeries DataSource="@_bloodSugarPivotData.GraphTypeData.FirstOrDefault(item => item.Type == "beforeMealSugars")?.Data"
+                                             Name="식전 추세" XName="Date" Width="2" Opacity="1" YName="Value" Fill="blue" Type="ChartSeriesType.Line">
+                                    <ChartMarker Visible="true" Width="6" Height="6" Shape="ChartShape.Circle">
+                                    </ChartMarker>
+                                </ChartSeries>
+                            </ChartSeriesCollection>
+                            
+                            <ChartLegendSettings Visible="true" Position="LegendPosition.Top" Alignment="Syncfusion.Blazor.Charts.Alignment.Far">
+                            </ChartLegendSettings>
+                        </SfChart>
+                    </ContentTemplate>
+                </TabItem>
+                <TabItem>
+                    <ChildContent>
+                        <TabHeader Text="식후추세"></TabHeader>
+                    </ChildContent>
+                    <ContentTemplate>
+                        <SfChart>
+                            <ChartArea><ChartAreaBorder Width="0"></ChartAreaBorder></ChartArea>
+                            <ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.DateTime">
+                                <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                            </ChartPrimaryXAxis>
+                            <ChartPrimaryYAxis Minimum="0" Maximum="200" Interval="25">
+                                <ChartAxisLineStyle Width="0"></ChartAxisLineStyle>
+                                <ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+
+                                <ChartStriplines>
+                                    <ChartStripline Start="125" End="200" Opacity="0.5" Color="#fcfbc0" Visible="true">
+                                        <ChartStriplineBorder Width="0"></ChartStriplineBorder>
+                                    </ChartStripline>
+                                </ChartStriplines>
+                            </ChartPrimaryYAxis>
+
+                            <ChartSeriesCollection>
+                                <ChartSeries DataSource="@_bloodSugarPivotData.GraphTypeData.FirstOrDefault(item => item.Type == "afterMealSugars")?.Data"
+                                             Name="식후 추세" XName="Date" Width="2" Opacity="1" YName="Value" Fill="orange" Type="ChartSeriesType.Line">
+                                    <ChartMarker Visible="true" Width="6" Height="6" Shape="ChartShape.Circle">
+                                    </ChartMarker>
+                                </ChartSeries>
+                            </ChartSeriesCollection>
+                            
+                            <ChartLegendSettings Visible="true" Position="LegendPosition.Top" Alignment="Syncfusion.Blazor.Charts.Alignment.Far">
+                            </ChartLegendSettings>
+                        </SfChart>
+                    </ContentTemplate>
+                </TabItem>
+            </TabItems>
+        </SfTab>
+    }
+
+    <br/>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="col-lg-12 control-section">
+                <div class="content-wrapper">
+                    <div class="row">
+                        <SfGrid DataSource="@_bloodSugar.Data">
+                            <GridColumns>
+                                <Syncfusion.Blazor.Grids.GridColumn HeaderText="일시" TextAlign="TextAlign.Center" Width="200">
+                                    <GridColumns>
+                                        <Syncfusion.Blazor.Grids.GridColumn Field=@nameof(BloodSugarByDate.Date) TextAlign="TextAlign.Center" HeaderText="참고치"></Syncfusion.Blazor.Grids.GridColumn>
+                                    </GridColumns>
+                                </Syncfusion.Blazor.Grids.GridColumn>
+                                <Syncfusion.Blazor.Grids.GridColumn HeaderText="아침" TextAlign="TextAlign.Center" Width="100">
+                                    <GridColumns>
+                                        <Syncfusion.Blazor.Grids.GridColumn Field=@nameof(BloodSugarByDate) TextAlign="TextAlign.Center" HeaderText="식전">
+                                            <Template>
+                                                @{
+                                                    var bloodSugar = (context as BloodSugarByDate);
+                                                    
+                                                    @if (bloodSugar.MorningBeforeMeal == 0)
+                                                    {
+                                                        <div>-</div>
+                                                    }
+                                                    else
+                                                    {
+                                                        @if (bloodSugar.MorningBeforeMealNote.Length > 0)
+                                                        {
+                                                            <div>
+                                                                <button type="button" class="btn btn-danger" @onclick="() => OnBtnClick(bloodSugar.MorningBeforeMealNote)">@bloodSugar.MorningBeforeMeal</button>
+                                                            </div>
+                                                        }
+                                                        else
+                                                        {
+                                                            <div>@bloodSugar.MorningBeforeMeal</div>
+                                                        }
+                                                    }
+                                                }
+                                            </Template>
+                                        </Syncfusion.Blazor.Grids.GridColumn>
+                                        <Syncfusion.Blazor.Grids.GridColumn Field=@nameof(BloodSugarByDate) TextAlign="TextAlign.Center" HeaderText="식후">
+                                            <Template>
+                                                @{
+                                                    var bloodSugar = (context as BloodSugarByDate);
+
+                                                    @if (bloodSugar.MorningAfterMeal == 0)
+                                                    {
+                                                        <div>-</div>
+                                                    }
+                                                    else
+                                                    {
+                                                        @if (bloodSugar.MorningAfterMealNote.Length > 0)
+                                                        {
+                                                            <div>
+                                                                <button type="button" class="btn btn-danger" @onclick="() => OnBtnClick(bloodSugar.MorningAfterMealNote)">@bloodSugar.MorningAfterMeal</button>
+                                                            </div>
+                                                        }
+                                                        else
+                                                        {
+                                                            <div>@bloodSugar.MorningAfterMeal</div>
+                                                        }
+                                                    }
+                                                }
+                                            </Template>
+                                        </Syncfusion.Blazor.Grids.GridColumn>
+                                    </GridColumns>
+                                </Syncfusion.Blazor.Grids.GridColumn>
+                                <Syncfusion.Blazor.Grids.GridColumn HeaderText="점심" TextAlign="TextAlign.Center" Width="100">
+                                    <GridColumns>
+                                        <Syncfusion.Blazor.Grids.GridColumn Field=@nameof(BloodSugarByDate) TextAlign="TextAlign.Center" HeaderText="식전">
+                                            <Template>
+                                                @{
+                                                    var bloodSugar = (context as BloodSugarByDate);
+
+                                                    @if (bloodSugar.LunchBeforeMeal == 0)
+                                                    {
+                                                        <div>-</div>
+                                                    }
+                                                    else
+                                                    {
+                                                        @if (bloodSugar.LunchBeforeMealNote.Length > 0)
+                                                        {
+                                                            <div>
+                                                                <button type="button" class="btn btn-danger" @onclick="() => OnBtnClick(bloodSugar.LunchBeforeMealNote)">@bloodSugar.LunchBeforeMeal</button>
+                                                            </div>
+                                                        }
+                                                        else
+                                                        {
+                                                            <div>@bloodSugar.LunchBeforeMeal</div>
+                                                        }
+                                                    }
+                                                }
+                                            </Template>
+                                        </Syncfusion.Blazor.Grids.GridColumn>
+                                        <Syncfusion.Blazor.Grids.GridColumn Field=@nameof(BloodSugarByDate) TextAlign="TextAlign.Center" HeaderText="식후">
+                                            <Template>
+                                                @{
+                                                    var bloodSugar = (context as BloodSugarByDate);
+
+                                                    @if (bloodSugar.LunchAfterMeal == 0)
+                                                    {
+                                                        <div>-</div>
+                                                    }
+                                                    else
+                                                    {
+                                                        @if (bloodSugar.LunchAfterMealNote.Length > 0)
+                                                        {
+                                                            <div>
+                                                                <button type="button" class="btn btn-danger" @onclick="() => OnBtnClick(bloodSugar.LunchAfterMealNote)">@bloodSugar.LunchAfterMeal</button>
+                                                            </div>
+                                                        }
+                                                        else
+                                                        {
+                                                            <div>@bloodSugar.LunchAfterMeal</div>
+                                                        }
+                                                    }
+                                                }
+                                            </Template>
+                                        </Syncfusion.Blazor.Grids.GridColumn>
+                                    </GridColumns>
+                                </Syncfusion.Blazor.Grids.GridColumn>
+                                <Syncfusion.Blazor.Grids.GridColumn HeaderText="저녁" TextAlign="TextAlign.Center" Width="100">
+                                    <GridColumns>
+                                        <Syncfusion.Blazor.Grids.GridColumn Field=@nameof(BloodSugarByDate) TextAlign="TextAlign.Center" HeaderText="식전">
+                                            <Template>
+                                                @{
+                                                    var bloodSugar = (context as BloodSugarByDate);
+
+                                                    @if (bloodSugar.DinnerBeforeMeal == 0)
+                                                    {
+                                                        <div>-</div>
+                                                    }
+                                                    else
+                                                    {
+                                                        @if (bloodSugar.DinnerBeforeMealNote.Length > 0)
+                                                        {
+                                                            <div>
+                                                                <button type="button" class="btn btn-danger" @onclick="() => OnBtnClick(bloodSugar.DinnerBeforeMealNote)">@bloodSugar.DinnerBeforeMeal</button>
+                                                            </div>
+                                                        }
+                                                        else
+                                                        {
+                                                            <div>@bloodSugar.DinnerBeforeMeal</div>
+                                                        }
+                                                    }
+                                                }
+                                            </Template>
+                                        </Syncfusion.Blazor.Grids.GridColumn>
+                                        <Syncfusion.Blazor.Grids.GridColumn Field=@nameof(BloodSugarByDate) TextAlign="TextAlign.Center" HeaderText="식후">
+                                            <Template>
+                                                @{
+                                                    var bloodSugar = (context as BloodSugarByDate);
+
+                                                    @if (bloodSugar.DinnerAfterMeal == 0)
+                                                    {
+                                                        <div>-</div>
+                                                    }
+                                                    else
+                                                    {
+                                                        @if (bloodSugar.DinnerAfterMealNote.Length > 0)
+                                                        {
+                                                            <div>
+                                                                <button type="button" class="btn btn-danger" @onclick="() => OnBtnClick(bloodSugar.DinnerAfterMealNote)">@bloodSugar.DinnerAfterMeal</button>
+                                                            </div>
+                                                        }
+                                                        else
+                                                        {
+                                                            <div>@bloodSugar.DinnerAfterMeal</div>
+                                                        }
+                                                    }
+                                                }
+                                            </Template>
+                                        </Syncfusion.Blazor.Grids.GridColumn>
+                                    </GridColumns>
+                                </Syncfusion.Blazor.Grids.GridColumn>
+                                <Syncfusion.Blazor.Grids.GridColumn HeaderText="취침전" TextAlign="TextAlign.Center" Width="100">
+                                    <GridColumns>
+                                        <Syncfusion.Blazor.Grids.GridColumn Field=@nameof(BloodSugarByDate) TextAlign="TextAlign.Center" HeaderText="-">
+                                            <Template>
+                                                @{
+                                                    var bloodSugar = (context as BloodSugarByDate);
+
+                                                    @if (bloodSugar.BeforeBedtime == 0)
+                                                    {
+                                                        <div>-</div>
+                                                    }
+                                                    else
+                                                    {
+                                                        @if (bloodSugar.BeforeBedtimeNote.Length > 0)
+                                                        {
+                                                            <div>
+                                                                <button type="button" class="btn btn-danger" @onclick="() => OnBtnClick(bloodSugar.BeforeBedtimeNote)">@bloodSugar.BeforeBedtime</button>
+                                                            </div>
+                                                        }
+                                                        else
+                                                        {
+                                                            <div>@bloodSugar.BeforeBedtime</div>
+                                                        }
+                                                    }
+                                                }
+                                            </Template>
+                                        </Syncfusion.Blazor.Grids.GridColumn>
+                                    </GridColumns>
+                                </Syncfusion.Blazor.Grids.GridColumn>
+                            </GridColumns>
+                        </SfGrid>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <SfDialog Width="335px" IsModal="true" @bind-Visible="Visibility">
+        <DialogTemplates>
+            <Header> 메모 </Header>
+            <Content>
+                <p>@_memo</p>
+            </Content>
+        </DialogTemplates>
+        <DialogButtons>
+            <DialogButton Content="확인" IsPrimary="true" OnClick="@DlgButtonClick" />
+        </DialogButtons>
+    </SfDialog>
+}
+
+@if (_bloodSugarLiteracy is not null)
+{
+    <div class="card">
+        <div class="card-body">
+            <h6 class="card-title">@_bloodSugarLiteracy.LiteracyName</h6>
+            <hr />
+            <p>@_bloodSugarLiteracy.LiteracyContent</p>
+        </div>
+    </div>
+    <br />
+
+    <div class="row">
+        @foreach (var youtubeContents in _bloodSugarLiteracy.YoutubeContentList)
+        {
+            <div class="col-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <img src="@youtubeContents.Thumbnail" class="rounded float-start" style="width:220px; height:130px">
+                        </div>
+                        <br />
+                        <h6 class="card-title">@youtubeContents.Title</h6>
+                        <p>@youtubeContents.Introduction</p>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+
+@code {
+    private BloodSugarData? _bloodSugar;
+    private LiteracyInfo? _bloodSugarLiteracy;
+    private PivotData? _bloodSugarPivotData;
+    private List<Values>? _allBloodSugars;
+    private string _memo = string.Empty;
+    private bool Visibility { get; set; } = false;
+    private readonly DateTime _toDate = DateTime.Now;
+    private DateTime _fromDate = DateCalculate.CalculatePreviousMonthDate(72);
+
+    protected override async Task OnInitializedAsync()
+    {
+        _bloodSugar = await HttpClient.GetFromJsonAsync<BloodSugarData>($"/MyHealth/blood-sugar/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}/1/10");
+        _bloodSugarLiteracy = await HttpClient.GetFromJsonAsync<LiteracyInfo>("/MyHealth/literacy-information/blood-sugar");
+        _bloodSugarPivotData = await HttpClient.GetFromJsonAsync<PivotData>($"/MyHealth/graph/blood-sugar/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}");
+
+        if (_bloodSugarPivotData is not null)
+        {
+            _allBloodSugars = _bloodSugarPivotData.GraphTypeData.FirstOrDefault(item => item.Type == "allBloodSugars")?.Data;
+        }
+
+        foreach (var youtubeContents in _bloodSugarLiteracy.YoutubeContentList)
+        {
+            youtubeContents.Thumbnail = $"https://i.ytimg.com/vi/{youtubeContents.VideoId}/hqdefault.jpg";
+        }
+    }
+
+    public async void GetDifferentPeriodDataAsync(int months)
+    {
+        _fromDate = DateCalculate.CalculatePreviousMonthDate(months);
+
+        _bloodSugar = await HttpClient.GetFromJsonAsync<BloodSugarData>($"/MyHealth/blood-sugar/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}/1/10");
+        _bloodSugarPivotData = await HttpClient.GetFromJsonAsync<PivotData>($"/MyHealth/graph/blood-sugar/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}");
+
+        StateHasChanged();
+    }
+
+    private void OnBtnClick(string memo)
+    {
+        Visibility = true;
+        _memo = memo;
+    }
+
+    private void DlgButtonClick()
+    {
+        Visibility = false;
+    }
+}
+
+<style>
+    .default-tab {
+        border: 1px solid #d7d7d7;
+    }
+
+    .default-tab .e-content .e-item {
+        padding: 10px;
+        text-align: justify;
+    }
+
+    .default-tab-control-section {
+        margin: 20px 20% 20px 20%;
+    }
+
+    @@media screen and (max-width: 480px) {
+        .default-tab-control-section {
+            margin: 20px 0 20px 0;
+        }
+    }
+
+    .bootstrap5 .default-tab,
+    .bootstrap5-dark .default-tab,
+    .bootstrap .default-tab,
+    .bootstrap-dark .default-tab,
+    .bootstrap4 .default-tab {
+        border: none;
+    }
+
+    .fluent .default-tab .e-content > .e-item.e-active,
+    .bootstrap5 .default-tab .e-content > .e-item.e-active,
+    .tailwind .default-tab .e-content > .e-item.e-active,
+    .material .default-tab .e-content > .e-item.e-active,
+    .bootstrap4 .default-tab .e-content > .e-item.e-active,
+    .bootstrap .default-tab .e-content > .e-item.e-active,
+    .fabric .default-tab .e-content > .e-item.e-active {
+        background: #FAF9F8;
+    }
+
+    .fluent-dark .default-tab .e-content > .e-item.e-active,
+    .bootstrap5-dark .default-tab .e-content > .e-item.e-active,
+    .tailwind-dark .default-tab .e-content > .e-item.e-active,
+    .material-dark .default-tab .e-content > .e-item.e-active,
+    .bootstrap-dark .default-tab .e-content > .e-item.e-active,
+    .fabric-dark .default-tab .e-content > .e-item.e-active,
+    .highcontrast .default-tab .e-content > .e-item.e-active {
+        background: #201F1E;
+    }
+</style>

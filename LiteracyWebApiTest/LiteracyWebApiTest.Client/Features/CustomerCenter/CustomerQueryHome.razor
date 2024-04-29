@@ -1,0 +1,37 @@
+﻿@page "/customer-query-home"
+
+<h3>1대1 문의하기</h3>
+<br/>
+
+<div>
+    <button @onclick="ShowCustomerQuery">문의하기</button>
+    <button @onclick="ShowCustomerQueryResult">문의내역</button>
+</div>
+<br/>
+
+<div>
+    @if (_currentComponent == "문의하기")
+    {
+        <CustomerQuery></CustomerQuery>
+    }
+    else
+    {
+        <CustomerQueryResult></CustomerQueryResult>
+    }
+</div>
+
+@code {
+    private string _currentComponent = "문의하기";
+
+    private void ShowCustomerQuery()
+    {
+        _currentComponent = "문의하기";
+        StateHasChanged();
+    }
+
+    private void ShowCustomerQueryResult()
+    {
+        _currentComponent = "문의내역";
+        StateHasChanged();
+    }
+}

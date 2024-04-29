@@ -1,0 +1,257 @@
+﻿@inject HttpClient HttpClient
+@using Syncfusion.Blazor.Charts
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Buttons
+
+<div class="row">
+    <div class="col-4">
+        <h5>갑상선</h5>
+    </div>
+    <div class="col-4"></div>
+    <div class="col-4" align="right">
+        <button type="button" class="btn btn-outline-secondary">큰 화면으로 보기</button>
+    </div>
+</div>
+
+<div class="btn-group" role="group" aria-label="Basic outlined example">
+    <button type="button" class="btn btn-outline-dark" @onclick="() => GetDifferentPeriodDataAsync(72)">전체</button>
+    <button type="button" class="btn btn-outline-dark" @onclick="() => GetDifferentPeriodDataAsync(6)">6개월</button>
+    <button type="button" class="btn btn-outline-dark" @onclick="() => GetDifferentPeriodDataAsync(24)">24개월</button>
+</div>
+
+@if (_thyroid is not null && _thyroid.Data.Count > 0)
+{
+    <div class="row">
+        <p class="col-3">총 <b style="color:red">@_thyroid.Data.Count</b>건</p>
+        <div class="col-6"></div>
+        <div class="col-3" align="right">
+            <SfSwitch @bind-Checked="@isChecked" ValueChange="Change" TChecked="bool"></SfSwitch>
+        </div>
+    </div>
+    <br/>
+
+    <div class="card">
+        <div class="card-body">
+            <SfChart>
+                <ChartArea><ChartAreaBorder Width="0"></ChartAreaBorder></ChartArea>
+                <ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.DateTime">
+                    <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                </ChartPrimaryXAxis>
+                <ChartPrimaryYAxis Minimum="0" Maximum="11" Interval="1">
+                    <ChartAxisLineStyle Width="0"></ChartAxisLineStyle>
+                    <ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+                </ChartPrimaryYAxis>
+
+                <ChartSeriesCollection>
+                    <ChartSeries DataSource="@_thyroidPivotData.GraphTypeData.FirstOrDefault(item => item.Type == "t3")?.Data"
+                                 Name="갑상선(T3)" XName="Date" Width="2" Opacity="1" YName="Value" Fill="red" Type="ChartSeriesType.Line">
+                        <ChartMarker Visible="true" Width="6" Height="6" Shape="ChartShape.Circle">
+                        </ChartMarker>
+                    </ChartSeries>
+                    <ChartSeries DataSource="@_thyroidPivotData.GraphTypeData.FirstOrDefault(item => item.Type == "freeT4")?.Data"
+                                 Name="갑상선(유리T4)" XName="Date" Width="2" Opacity="1" YName="Value" Fill="orange" Type="ChartSeriesType.Line">
+                        <ChartMarker Visible="true" Width="6" Height="6" Shape="ChartShape.Circle">
+                        </ChartMarker>
+                    </ChartSeries>
+                    <ChartSeries DataSource="@_thyroidPivotData.GraphTypeData.FirstOrDefault(item => item.Type == "tsh")?.Data"
+                                 Name="갑상선자극호르몬" XName="Date" Width="2" Opacity="1" YName="Value" Fill="green" Type="ChartSeriesType.Line">
+                        <ChartMarker Visible="true" Width="6" Height="6" Shape="ChartShape.Circle">
+                        </ChartMarker>
+                    </ChartSeries>
+                </ChartSeriesCollection>
+
+                <ChartLegendSettings Visible="true" Position="LegendPosition.Top" Alignment="Syncfusion.Blazor.Charts.Alignment.Far">
+                </ChartLegendSettings>
+            </SfChart>
+        </div>
+    </div>
+
+    <br/>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="col-lg-12 control-section">
+                <div class="content-wrapper">
+                    <div class="row">
+                        <SfGrid DataSource="@_thyroid.Data" @ref="Grid">
+                            <GridColumns>
+                                <Syncfusion.Blazor.Grids.GridColumn HeaderText="일시" TextAlign="TextAlign.Center" Width="120">
+                                    <GridColumns>
+                                        <Syncfusion.Blazor.Grids.GridColumn Field=@nameof(ThyroidByDate.Date) TextAlign="TextAlign.Center" HeaderText="참고치"></Syncfusion.Blazor.Grids.GridColumn>
+                                    </GridColumns>
+                                </Syncfusion.Blazor.Grids.GridColumn>
+                                <Syncfusion.Blazor.Grids.GridColumn HeaderText="갑상선(T3)" TextAlign="TextAlign.Center" Width="150">
+                                    <GridColumns>
+                                        <Syncfusion.Blazor.Grids.GridColumn Field=@nameof(ThyroidByDate.ThyroidT3) TextAlign="TextAlign.Center" HeaderText=@GetT3HeaderText(isChecked)></Syncfusion.Blazor.Grids.GridColumn>
+                                    </GridColumns>
+                                </Syncfusion.Blazor.Grids.GridColumn>
+                                <Syncfusion.Blazor.Grids.GridColumn HeaderText="갑상선(유리T4)" TextAlign="TextAlign.Center" Width="150">
+                                    <GridColumns>
+                                        <Syncfusion.Blazor.Grids.GridColumn Field=@nameof(ThyroidByDate.ThyroidT4) TextAlign="TextAlign.Center" HeaderText=@GetT4HeaderText(isChecked)></Syncfusion.Blazor.Grids.GridColumn>
+                                    </GridColumns>
+                                </Syncfusion.Blazor.Grids.GridColumn>
+                                <Syncfusion.Blazor.Grids.GridColumn HeaderText="갑상선자극호르몬" TextAlign="TextAlign.Center" Width="150">
+                                    <GridColumns>
+                                        <Syncfusion.Blazor.Grids.GridColumn Field=@nameof(ThyroidByDate.Triglyceride) TextAlign="TextAlign.Center" HeaderText=@GetTriglycerideHeaderText(isChecked)></Syncfusion.Blazor.Grids.GridColumn>
+                                    </GridColumns>
+                                </Syncfusion.Blazor.Grids.GridColumn>
+                            </GridColumns>
+                        </SfGrid>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (_thyroidLiteracy is not null)
+{
+    <div class="card">
+        <div class="card-body">
+            <h6 class="card-title">@_thyroidLiteracy.LiteracyName</h6>
+            <hr />
+            <p>@_thyroidLiteracy.LiteracyContent</p>
+        </div>
+    </div>
+    <br />
+
+    <div class="row">
+        @foreach (var youtubeContents in _thyroidLiteracy.YoutubeContentList)
+        {
+            <div class="col-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <img src="@youtubeContents.Thumbnail" class="rounded float-start" style="width:220px; height:130px">
+                        </div>
+                        <br />
+                        <h6 class="card-title">@youtubeContents.Title</h6>
+                        <p>@youtubeContents.Introduction</p>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+
+@code {
+    private ThyroidData? _thyroid;
+    private LiteracyInfo? _thyroidLiteracy;
+    private PivotData? _thyroidPivotData;
+    private decimal? t3GlobalUnit;
+    private decimal? t4GlobalUnit;
+    private decimal? triglycerideGlobalUnit;
+    private bool isChecked = false;
+    private readonly DateTime _toDate = DateTime.Now;
+    private DateTime _fromDate = DateCalculate.CalculatePreviousMonthDate(72);
+    private SfGrid<ThyroidByDate> Grid;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _thyroid = await HttpClient.GetFromJsonAsync<ThyroidData>($"/MyHealth/thyroid/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}/1/10");
+        _thyroidLiteracy = await HttpClient.GetFromJsonAsync<LiteracyInfo>("/MyHealth/literacy-information/thyroid");
+        _thyroidPivotData = await HttpClient.GetFromJsonAsync<PivotData>($"/MyHealth/graph/thyroid/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}");
+
+        foreach (var youtubeContents in _thyroidLiteracy.YoutubeContentList)
+        {
+            youtubeContents.Thumbnail = $"https://i.ytimg.com/vi/{youtubeContents.VideoId}/hqdefault.jpg";
+        }
+
+        var result = await HttpClient.GetFromJsonAsync<ExamItemUnitsModel[]>($"/Unit/ExamItemUnits/{RecordDivisions.건강검진결과}");
+        t3GlobalUnit = result.FirstOrDefault(item => item.KoreanName == "갑상선호르몬(T3)").Units.FirstOrDefault().RateToSIUnit;
+        t4GlobalUnit = result.FirstOrDefault(item => item.KoreanName == "갑상선호르몬(Free T4)").Units.FirstOrDefault().RateToSIUnit;
+        triglycerideGlobalUnit = result.FirstOrDefault(item => item.KoreanName == "갑상선자극호르몬").Units.FirstOrDefault().RateToSIUnit;
+    }
+
+    public async void GetDifferentPeriodDataAsync(int months)
+    {
+        _fromDate = DateCalculate.CalculatePreviousMonthDate(months);
+
+        _thyroid = await HttpClient.GetFromJsonAsync<ThyroidData>($"/MyHealth/thyroid/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}/1/10");
+        _thyroidPivotData = await HttpClient.GetFromJsonAsync<PivotData>($"/MyHealth/graph/thyroid/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}");
+
+        StateHasChanged();
+    }
+
+    private async void Change(Syncfusion.Blazor.Buttons.ChangeEventArgs<bool> args)
+    {
+        if (args.Checked == true)
+        {
+            foreach (var data in _thyroid.Data)
+            {
+                if (data.ThyroidT3 != "-")
+                {
+                    data.ThyroidT3 = (decimal.Parse(data.ThyroidT3) * t3GlobalUnit).ToString().TrimEnd('0');
+                    if (data.ThyroidT3.EndsWith("."))
+                    {
+                        data.ThyroidT3 = data.ThyroidT3.TrimEnd('.');
+                    }
+                }
+
+                if (data.ThyroidT4 != "-")
+                {
+                    data.ThyroidT4 = (decimal.Parse(data.ThyroidT4) * t4GlobalUnit).ToString().TrimEnd('0');
+                    if (data.ThyroidT4.EndsWith("."))
+                    {
+                        data.ThyroidT4 = data.ThyroidT4.TrimEnd('.');
+                    }
+                }
+
+                if (data.Triglyceride != "-")
+                {
+                    data.Triglyceride = (decimal.Parse(data.Triglyceride) * triglycerideGlobalUnit).ToString().TrimEnd('0');
+                    if (data.Triglyceride.EndsWith("."))
+                    {
+                        data.Triglyceride = data.Triglyceride.TrimEnd('.');
+                    }
+                }
+
+            }
+        }
+        else
+        {
+            _thyroid = await HttpClient.GetFromJsonAsync<ThyroidData>($"/MyHealth/thyroid/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}/1/10");
+        }
+        StateHasChanged();
+        Grid.Refresh();
+        // Your code here.
+    }
+
+    private string GetT3HeaderText(bool isChecked)
+    {
+        if (isChecked)
+        {
+            return "0.5~2.9";
+        }
+        else
+        {
+            return "0.4~1.9";
+        }
+    }
+
+    private string GetT4HeaderText(bool isChecked)
+    {
+        if (isChecked)
+        {
+            return "9.0~19.0";
+        }
+        else
+        {
+            return "0.7~1.5";
+        }
+    }
+
+    private string GetTriglycerideHeaderText(bool isChecked)
+    {
+        if (isChecked)
+        {
+            return "0.35~4.9";
+        }
+        else
+        {
+            return "0.4~4.9";
+        }
+    }
+
+}

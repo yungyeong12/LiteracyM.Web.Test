@@ -1,0 +1,144 @@
+﻿@page "/health-youtube-detail/{videoCode}"
+@using System.Text.Json
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject HttpClient HttpClient
+
+<h3>건강유튜브</h3>
+
+@if (_healthYoutubeDetail is not null)
+{
+    <div class="row">
+        <div class="card col-9">
+            <div class="card-body">
+                <iframe width="600" height="345"
+                        src="@_healthYoutubeDetail.YoutubeCategoryContent.Url">
+                </iframe>
+                <div class="row">
+                    <div class="col-4">
+                        <p>@_healthYoutubeDetail.YoutubeCategoryContent.ParentClassification > @_healthYoutubeDetail.YoutubeCategoryContent.Classification</p>
+                    </div>
+                    <div class="col-6"></div>
+                    <div class="col-2" style="display: flex; justify-content: flex-end">
+                        <button type="button" class="btn btn-light" @onclick="AddSavedVideo"> 보관 </button>
+                    </div>
+                </div>
+                <br/>
+                <h5 class="card-title">@_healthYoutubeDetail.YoutubeCategoryContent.Title</h5>
+                <p>@_healthYoutubeDetail.YoutubeCategoryContent.Introduction</p>
+            </div>
+        </div>
+        <div class="card col-3">
+            <div class="card-body">
+                <h5 class="card-title">관련유튜브</h5>
+                @if (_healthYoutubeDetail.Recommendations.Count == 0)
+                {
+                    <p>관련 유튜브가 없습니다.</p>
+                }
+                else
+                {
+                    foreach (var contents in _healthYoutubeDetail.Recommendations)
+                    {
+                        <div class="card col-12">
+                            <div class="card-body">
+                                <div class="row">
+                                    <button type="button" @onclick='() => GetVideoAsync(contents.VideoCode)'>
+                                        <img src="@contents.Thumbnail" class="rounded float-start" style="width:140px; height:80px">
+                                    </button>
+                                </div>
+                                <h6 class="card-title">@contents.Title</h6>
+                                <p>@contents.Introduction</p>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string VideoCode { get; set; } = default!;
+    private YoutubeContentsDetail? _healthYoutubeDetail;
+    private List<SavedVideoInfo> recentlyVideos = new();
+    private List<SavedVideoInfo> savedVideos = new();
+
+    protected override async void OnInitialized()
+    {
+        GetVideoAsync(VideoCode);
+    }
+
+    private async void GetVideoAsync(string videoCode)
+    {
+        _healthYoutubeDetail = await HttpClient.GetFromJsonAsync<YoutubeContentsDetail>($"/HealthYoutube/sub-category/youtube-content/{videoCode}");
+        _healthYoutubeDetail.YoutubeCategoryContent.Url = $"https://www.youtube.com/embed/{_healthYoutubeDetail.YoutubeCategoryContent.VideoId}?autoplay=1&mute=1";
+
+        if (_healthYoutubeDetail.Recommendations.Count > 0)
+        {
+            foreach (var data in _healthYoutubeDetail.Recommendations)
+            {
+                data.Thumbnail = $"https://i.ytimg.com/vi/{data.VideoId}/hqdefault.jpg";
+            }
+        }
+
+        AddRecentlyVideo();
+
+        StateHasChanged();
+    }
+
+    private async void AddRecentlyVideo()
+    {
+        recentlyVideos = await LocalStorage.GetItemAsync<List<SavedVideoInfo>>("recentlyVideos") ?? new();
+
+        if (recentlyVideos.Exists(video => video.Code == VideoCode))
+        {
+            var changedVideo = recentlyVideos.FirstOrDefault(video => video.Code == VideoCode);
+            changedVideo.Date = DateTime.Now.ToString("yyyy-MM-dd hh:mm:ss");
+        }
+        else
+        {
+            var savedVideo = new SavedVideoInfo
+            {
+                Code = VideoCode,
+                Date = DateTime.Now.ToString("yyyy-MM-dd hh:mm:ss"),
+                ParentClassification = _healthYoutubeDetail.YoutubeCategoryContent.ParentClassification,
+                Classification = _healthYoutubeDetail.YoutubeCategoryContent.Classification,
+                Title = _healthYoutubeDetail.YoutubeCategoryContent.Title,
+                Introduction = _healthYoutubeDetail.YoutubeCategoryContent.Introduction,
+                Thumbnail = _healthYoutubeDetail.YoutubeCategoryContent.VideoInfo.Thumbnail
+            };
+
+            recentlyVideos.Add(savedVideo);
+        }
+
+        await LocalStorage.SetItemAsStringAsync("recentlyVideos", JsonSerializer.Serialize(recentlyVideos));
+    }
+
+    private async void AddSavedVideo()
+    {
+        savedVideos = await LocalStorage.GetItemAsync<List<SavedVideoInfo>>("savedVideos") ?? new();
+
+        if (savedVideos.Exists(video => video.Code == VideoCode))
+        {
+            var changedVideo = savedVideos.FirstOrDefault(video => video.Code == VideoCode);
+            changedVideo.Date = DateTime.Now.ToString("yyyy-MM-dd hh:mm:ss");
+        }
+        else
+        {
+            var savedVideo = new SavedVideoInfo
+                {
+                    Code = VideoCode,
+                    Date = DateTime.Now.ToString("yyyy-MM-dd hh:mm:ss"),
+                    ParentClassification = _healthYoutubeDetail.YoutubeCategoryContent.ParentClassification,
+                    Classification = _healthYoutubeDetail.YoutubeCategoryContent.Classification,
+                    Title = _healthYoutubeDetail.YoutubeCategoryContent.Title,
+                    Introduction = _healthYoutubeDetail.YoutubeCategoryContent.Introduction,
+                    Thumbnail = _healthYoutubeDetail.YoutubeCategoryContent.VideoInfo.Thumbnail
+                };
+
+            savedVideos.Add(savedVideo);
+        }
+
+        await LocalStorage.SetItemAsStringAsync("savedVideos", JsonSerializer.Serialize(savedVideos));
+    }
+}

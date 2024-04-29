@@ -1,0 +1,45 @@
+﻿@page "/health-info"
+
+<div>
+    <button @onclick="ShowBloodPressure">혈압</button>
+    <button @onclick="ShowBloodSugar">혈당</button>
+    <button @onclick="ShowHeightWeight">키/몸무게</button>
+</div>
+<br/>
+
+<div>
+    @if (_currentCompnent == "혈압")
+    {
+        <BloodPressure></BloodPressure>
+    }
+    else if (_currentCompnent == "혈당")
+    {
+        <BloodSugar></BloodSugar>
+    }
+    else
+    {
+        <HeightWeight></HeightWeight>
+    }
+</div>
+
+@code {
+    private string _currentCompnent = "혈압";
+
+    private void ShowBloodPressure()
+    {
+        _currentCompnent = "혈압";
+        StateHasChanged();
+    }
+
+    private void ShowBloodSugar()
+    {
+        _currentCompnent = "혈당";
+        StateHasChanged();
+    }
+
+    private void ShowHeightWeight()
+    {
+        _currentCompnent = "키/몸무게";
+        StateHasChanged();
+    }
+}

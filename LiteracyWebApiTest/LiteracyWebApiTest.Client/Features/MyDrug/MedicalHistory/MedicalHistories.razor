@@ -1,0 +1,96 @@
+﻿@page "/medical-histories"
+@inject HttpClient HttpClient
+
+<div class="row">
+    <div class="col-4">
+        <h5>진료 및 투약 내역</h5>
+
+       <div class="btn-group" role="group" aria-label="Basic outlined example">
+            <button type="button" class="btn btn-outline-dark" @onclick="() => GetDifferentPeriodDataAsync(3)">3개월</button>
+            <button type="button" class="btn btn-outline-dark" @onclick="() => GetDifferentPeriodDataAsync(6)">6개월</button>
+            <button type="button" class="btn btn-outline-dark" @onclick="() => GetDifferentPeriodDataAsync(12)">12개월</button>
+        </div>
+
+        @if (_groupedOrderHistories is not null)
+        {
+            <div class="row">
+                <div class="col-4">
+                    <p>총 <b style="color:red">@_orderHistories.Data.Count</b> 건</p>
+                </div>
+                <div class="col-2"></div>
+                <div class="col-6">
+                    <select class="form-select" aria-label="Default select example" @onchange="GetSelectedOptionDataAsync">
+                        <option value="desc" selected>최신순</option>
+                        <option value="asc">과거순</option>
+                    </select>
+                </div>
+            </div>
+            @foreach (var groupedOrderHistory in _groupedOrderHistories)
+            {
+                <p>@GetDateFormat(groupedOrderHistory.Key)</p>
+                @foreach (var medicalHistory in groupedOrderHistory)
+                {
+                    <MedicalHistoryDrugCard Drug="@medicalHistory" OnSelected="@HandleDrugSelected" />
+                }
+            }
+        }
+    </div>
+    <div class="col-8">
+        <MedicalHistoryDrugDetailCard SelectedDrug="_selectedDrug" />
+    </div>
+</div>
+
+@code {
+    private MedicalHistoryInfo? _orderHistories;
+    private MedicalHistoryInfo.PrescriptionDrug? _selectedDrug;
+    private List<IGrouping<string, MedicalHistoryInfo.PrescriptionDrug>>? _groupedOrderHistories;
+    private readonly DateTime _toDate = DateTime.Now;
+    private DateTime _fromDate = DateCalculate.CalculatePreviousMonthDate(3);
+
+    protected override async Task OnInitializedAsync()
+    {
+        _orderHistories = await HttpClient.GetFromJsonAsync<MedicalHistoryInfo>($"/MyDrugs/new-medical-histories/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}/desc?pageNumber=1&recordPerPage=10");
+
+        if (_orderHistories is not null)
+        {
+            _groupedOrderHistories = _orderHistories.GroupDataListByMonth();
+            // _selectedDrug = _orderHistories.Data[0];
+        }
+    }
+
+    private void HandleDrugSelected(MedicalHistoryInfo.PrescriptionDrug drug)
+        => _selectedDrug = drug;
+
+    public async void GetDifferentPeriodDataAsync(int months)
+    {
+        _fromDate = DateCalculate.CalculatePreviousMonthDate(months);
+
+        _orderHistories = await HttpClient.GetFromJsonAsync<MedicalHistoryInfo>($"/MyDrugs/new-medical-histories/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}/desc?pageNumber=1&recordPerPage=10");
+
+        if (_orderHistories is not null)
+        {
+            _groupedOrderHistories = _orderHistories.GroupDataListByMonth();
+        }
+
+        StateHasChanged();
+    }
+
+    public async void GetSelectedOptionDataAsync(ChangeEventArgs e)
+    {
+        _orderHistories = await HttpClient.GetFromJsonAsync<MedicalHistoryInfo>($"/MyDrugs/new-medical-histories/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}/{e.Value}?pageNumber=1&recordPerPage=10");
+
+        if (_orderHistories is not null)
+        {
+            _groupedOrderHistories = _orderHistories.GroupDataListByMonth();
+        }
+
+        StateHasChanged();
+    }
+
+    public string GetDateFormat(string date)
+    {
+        var parsedDate = DateTime.ParseExact(date, "yyyy-MM", null);
+
+        return parsedDate.ToString("yyyy년 MM월");
+    }
+}

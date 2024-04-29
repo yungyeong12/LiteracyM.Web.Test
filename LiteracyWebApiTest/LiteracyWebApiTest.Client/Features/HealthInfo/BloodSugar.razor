@@ -1,0 +1,96 @@
+﻿@inject HttpClient HttpClient
+@using Syncfusion.Blazor.Calendars
+@using Syncfusion.Blazor.Inputs
+
+<h6>측정시점</h6>
+
+<form method="post" @onsubmit="SaveBloodSugarAsync">
+    <div class="row">
+        <div class="col-8">
+            <div class="btn-group d-flex" role="group" aria-label="Basic radio toggle button group">
+                <input type="radio" class="btn-check" name="btnradio" id="btnBmorning" autocomplete="off" checked @onclick="() => _day=1">
+                <label class="btn btn-outline-secondary" for="btnBmorning"> 아침식전 </label>
+
+                <input type="radio" class="btn-check" name="btnradio" id="btnAmorning" autocomplete="off" @onclick="() => _day=2">
+                <label class="btn btn-outline-secondary" for="btnAmorning"> 아침식후 </label>
+
+                <input type="radio" class="btn-check" name="btnradio" id="btnBlunch" autocomplete="off" @onclick="() => _day=3">
+                <label class="btn btn-outline-secondary" for="btnBlunch"> 점심식전 </label>
+                
+                <input type="radio" class="btn-check" name="btnradio" id="btnAlunch" autocomplete="off" @onclick="() => _day=4">
+                <label class="btn btn-outline-secondary" for="btnAlunch"> 점심식후 </label>
+                
+                <input type="radio" class="btn-check" name="btnradio" id="btnBdinner" autocomplete="off" @onclick="() => _day=5">
+                <label class="btn btn-outline-secondary" for="btnBdinner"> 저녁식전 </label>
+                
+                <input type="radio" class="btn-check" name="btnradio" id="btnAdinner" autocomplete="off" @onclick="() => _day=6">
+                <label class="btn btn-outline-secondary" for="btnAdinner"> 저녁식후 </label>
+                
+                <input type="radio" class="btn-check" name="btnradio" id="btnnight" autocomplete="off" @onclick="() => _day=7">
+                <label class="btn btn-outline-secondary" for="btnnight"> 취침전 </label>
+            </div>
+        </div>
+        <div class="col-4">
+            <SfDatePicker TValue="DateTime" FullScreen="true" Format="yyyy.MM.dd dddd" ShowClearButton="true" @bind-Value="@_inputDate"></SfDatePicker>
+        </div>
+    </div>
+    <br />
+
+    <div class="row">
+        <div class="col-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <h5 class="card-title col-4"><Icon Name="IconName.DropletFill" Size="IconSize.x2" Color="IconColor.Danger" /> 혈당 </h5>
+                        <div class="col-2"></div>
+                        <div class="mb-3 col-4">
+                            <SfNumericTextBox TValue="int?" Placeholder="120" ShowSpinButton="false" @bind-Value="@_bloodSugar"></SfNumericTextBox>
+                        </div>
+                        <h6 class="col-2">mg/dL</h6>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title col-4"><Icon Name="IconName.FileEarmarkTextFill" Size="IconSize.x2" Color="IconColor.Success" /> 메모 </h5>
+                    <br/>
+                    <hr/>
+                    <textarea class="form-control" rows="6" @bind="_memo"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+    <br />
+
+    <div class="row">
+        <div class="col-10"></div>
+        <div class="col-2">
+            <button type="submit" class="btn btn-danger">저장하기</button>
+        </div>
+    </div>
+</form>
+
+@code {
+    private DateTime _inputDate = DateTime.Now;
+    private int _day = 1;
+    private int? _bloodSugar;
+    private string _memo = string.Empty;
+
+    private async void SaveBloodSugarAsync()
+    {
+        var addQuery = new BloodSugarData() { InputDateTime = _inputDate, BloodSugarDayDivisions = (byte)_day, BloodSugar = _bloodSugar, Note = _memo };
+
+        var result = await HttpClient.PostAsJsonAsync("/MyHealth/blood-sugar", addQuery);
+
+        if (result.IsSuccessStatusCode)
+        {
+            _inputDate = DateTime.Now;
+            _bloodSugar = null;
+            _memo = string.Empty;
+
+            StateHasChanged();
+        }
+    }
+}

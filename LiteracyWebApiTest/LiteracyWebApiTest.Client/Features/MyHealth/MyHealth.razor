@@ -1,0 +1,116 @@
+﻿@page "/myhealth"
+@using LiteracyWebApiTest.Client.Features.MyHealth.Detail
+@inject HttpClient HttpClient
+
+<div class="row">
+    <div class="col-4">
+        <h5>건강데이터</h5>
+        @if (_healthData is not null)
+        {
+            @foreach (var data in _healthData)
+            {
+                @if (data.JudgementDivision >= 3)
+                {
+                    <div class="card" @onclick="() => _labKind=data.LabKind">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-2">
+                                    !!
+                                    @* 경고 Icon *@
+                                </div>
+                                <div class="col-5">
+                                    <h5>@data.LabKind</h5>
+                                    <p>@data.LabDate</p>
+                                </div>
+                                <div class="col-4">
+                                    <h5>@data.Value @data.Unit</h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="card" @onclick="() => _labKind=data.LabKind">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-8">
+                                    <h5>@data.LabKind</h5>
+                                    <p>@data.LabDate</p>
+                                </div>
+                                <div class="col-4">
+                                    <h5>@data.Value @data.Unit</h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+                <br/>
+            }
+        }
+    </div>
+    <div class="col-8">
+        @if (_labKind == "체중")
+        {
+            <Weight></Weight>
+        }
+        else if (_labKind == "혈압")
+        {
+            <BloodPressure></BloodPressure>
+        }
+        else if (_labKind == "혈당")
+        {
+            <BloodSugar></BloodSugar>
+        }
+        else if (_labKind == "당화혈색소(HbA1c)")
+        {
+            <HbA1c></HbA1c>
+        }
+        else if (_labKind == "단백뇨(반정량)")
+        {
+            <Proteinuria></Proteinuria>
+        }
+        else if (_labKind == "전립선(PSA)")
+        {
+            <PSA></PSA>
+        }
+        else if (_labKind == "혈액응고(INR)")
+        {
+            <Prothrombin></Prothrombin>
+        }
+        else if (_labKind == "전체 콜레스테롤" || _labKind == "HDL 콜레스테롤" || _labKind == "LDL 콜레스테롤" || _labKind == "중성지방")
+        {
+            <Cholesterol></Cholesterol>
+        }
+        else if (_labKind == "갑상선(T3)" || _labKind == "갑상선(Free T4)" || _labKind == "갑상선(TSH)")
+        {
+            <Thyroid></Thyroid>
+        }
+        else if (_labKind == "크레아티닌" || _labKind == "사구체여과율")
+        {
+            <CreatinineWithGFR></CreatinineWithGFR>
+        }
+        else if (_labKind == "간효소(AST)" || _labKind == "간효소(rGT)" || _labKind == "간효소(ALT)")
+        {
+            <LiverFunction></LiverFunction>
+        }
+        else if (_labKind == "철분(페리틴)" || _labKind == "헤모글로빈")
+        {
+            <HemoglobinWithFerritin></HemoglobinWithFerritin>
+        }
+    </div>
+</div>
+
+@code {
+    private HealthData[]? _healthData;
+    private string _labKind = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _healthData = await HttpClient.GetFromJsonAsync<HealthData[]>("/MyHealth/lately");
+        if (_healthData is not null)
+        {
+            _labKind = _healthData[0].LabKind;
+        }
+    }
+}

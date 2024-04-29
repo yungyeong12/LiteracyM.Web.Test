@@ -1,0 +1,36 @@
+﻿@inject HttpClient HttpClient
+
+<div class="row">
+    <div class="col-4">
+        @if (_myDrugs is not null)
+        {
+            <p>총 <b style="color:red">@_myDrugs.Length</b> 건</p>
+            <br/>
+            @foreach (var drug in _myDrugs)
+            {
+                <TakingDrugCard Drug="@drug" OnSelected="@HandleDrugSelected"/>
+            }
+        }
+    </div>
+    <div class="col-8">
+        <TakingDrugDetailCard SelectedDrug="_selectedDrug" />
+    </div>
+</div>
+
+@code {
+    private DrugInfo[]? _myDrugs;
+    private DrugInfo? _selectedDrug;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _myDrugs = await HttpClient.GetFromJsonAsync<DrugInfo[]>("/MyDrugs/patient-istaking-drugs");
+
+        if (_myDrugs is not null)
+        {
+            _selectedDrug = _myDrugs[0];
+        }
+    }
+
+    private void HandleDrugSelected(DrugInfo drug)
+        => _selectedDrug = drug;
+}

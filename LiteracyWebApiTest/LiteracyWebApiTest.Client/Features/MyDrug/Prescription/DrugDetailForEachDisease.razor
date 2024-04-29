@@ -1,0 +1,42 @@
+﻿@inject HttpClient HttpClient
+
+<h3>약물 상세정보</h3>
+
+@foreach(var drugDetail in _drugDetails)
+{
+    <h5>@drugDetail.DrugName</h5>
+
+    <img src="@drugDetail.DrugImageUrl" style="width:300px; height:170px" />
+
+    <p>효능효과<br />@drugDetail.EffectSummary</p>
+    <p>복약안내<br />@drugDetail.MedicationInformation</p>
+    <p>성분/함량 <br /> @drugDetail.DrugIngredientName <br />
+        성상 <br />@drugDetail.IdentificationMark <br />
+        저장방법 <br />@drugDetail.Storage
+    </p>
+}
+
+@code {
+    private DrugInfoForEachDisease? _activeDrug;
+    private List<DrugInfoDetailWithoutId> _drugDetails = new();
+
+    [Parameter, EditorRequired]
+    public DrugInfoForEachDisease? SelectedDrug { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _drugDetails = new();
+        if (SelectedDrug is not null)
+        {
+            _activeDrug = SelectedDrug;
+            foreach (var drug in _activeDrug.DrugDetails)
+            {
+                var drugDetail = await HttpClient.GetFromJsonAsync<DrugInfoDetailWithoutId>($"/MyDrugs/drug-information/{drug.KpicDrugCode}");
+                if (drugDetail is not null)
+                {
+                    _drugDetails.Add(drugDetail);
+                }
+            }
+        }
+    }
+}

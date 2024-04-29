@@ -1,0 +1,135 @@
+﻿@page "/pdf"
+@using Syncfusion.Blazor.Popups
+@using Syncfusion.Blazor.Inputs
+@using Syncfusion.Blazor.Buttons
+@using LiteracyWebApiTest.Client.Features.MyPage
+@inject HttpClient HttpClient
+
+<h3>PDF 내보내기</h3>
+<br/>
+<div class="row">
+    <div class="col-9">
+        <p>지금껏 입력하신 건강정보를 파일로 모아드릴게요.</p>
+    </div>
+    <div class="col-3">
+        <button type="button" @onclick="OnBtnClick">다음</button>
+    </div>
+</div>
+<br/>
+
+<div class="row">
+    @if (pdfData is not null)
+    {
+        <div class="col-6">
+            @foreach (var healthData in pdfData.HealthData)
+            {
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            @if (healthData.JudgementDivision >= 3)
+                            {
+                                <div class="col-2">
+                                    @* 경고 Icon *@
+                                </div>
+                                <div class="col-5">
+                                    <h5>@healthData.LabKind</h5>
+                                    <p>@healthData.LabDate</p>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="col-8">
+                                    <h5>@healthData.LabKind</h5>
+                                    <p>@healthData.LabDate</p>
+                                </div>
+                            }
+                            <div class="col-4">
+                                <h5>@healthData.Value @healthData.Unit</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <br/>
+            }
+        </div>
+        <div class="col-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-4">
+                            <img src="@pdfData.MyMedication.ImageUri" class="rounded float-start" style="width:100px; height:100px">
+                        </div>
+                        <div class="col-8">
+                            <h5>@pdfData.MyMedication.DrugName</h5>
+                            <p>@pdfData.MyMedication.HospitalName</p>
+                            <br/>
+                            <p>@pdfData.MyMedication.Date</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<SfDialog Width="335px" IsModal="true" @bind-Visible="Visibility">
+    <DialogTemplates>
+        <Header> 비밀번호 등록 </Header>
+        <Content>
+            <p>고객님의 건강기록을 보호할 비밀번호 6자리를 입력해 주세요.</p>
+            <SfTextBox Placeholder="@birth" @bind-Value="@password"></SfTextBox>
+            <SfCheckBox @bind-Checked="@isChecked" @onchange="onChange"> 비밀번호를 생년월일로 설정하겠습니다.</SfCheckBox>
+            <SfCheckBox @bind-Checked="@isPrivate"> 이름, 나이, 생년월일, 성별 정보 비공개</SfCheckBox>
+            <p>비밀번호를 설정하지 않을 시, 건강정보에 대한 보안이 취약해질 수 있습니다.</p>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        <DialogButton Content="PDF 내보내기" OnClick="@PdfExportAsync" />
+    </DialogButtons>
+    <DialogAnimationSettings Effect="@DialogEffect.None"></DialogAnimationSettings>
+</SfDialog>
+
+@code {
+    PdfData? pdfData;
+    bool Visibility { get; set; } = false;
+
+    private string birth;
+    private string password = string.Empty;
+    private bool isChecked = false;
+    private bool isEncrypt = false;
+    private bool isPrivate = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        pdfData = await HttpClient.GetFromJsonAsync<PdfData>("/MyHome/pdf-main");
+        var result = await HttpClient.GetFromJsonAsync<PatientProfile>("/Account/profile");
+        birth = DateTime.Parse(result.BirthDate).ToString("yyMMdd");
+    }
+
+    private void OnBtnClick()
+    {
+        Visibility = true;
+    }
+    private async void PdfExportAsync()
+    {
+        if (password.Length > 0)
+        {
+            isEncrypt = true;
+        }
+
+        var result = await HttpClient.PostAsJsonAsync($"/pdfgenerator/pdf-generate?isEncrypt={isEncrypt}&password={password}&isPrivate={isPrivate}", new{});
+        Visibility = false;
+    }
+
+    private void onChange(ChangeEventArgs args)
+    {
+        if (isChecked == true)
+        {
+            password = birth;
+        }
+        else
+        {
+            password = string.Empty;
+        }
+    }
+}

@@ -1,0 +1,196 @@
+﻿@page "/"
+@inject NavigationManager NavigationManager
+@inject HttpClient HttpClient
+
+<PageTitle>Home</PageTitle>
+
+<div class="row">
+    <div class="card col-7" @onclick='() => NavigationManager.NavigateTo($"/today-literacy")'>
+        <div class="card-body">
+            <div class="row">
+                <h5>오늘의 리터러시</h5>
+                <hr />
+                <p>@basicInfo.ToDayLiteracy.Title</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card col-5">
+        <div class="card-body">
+            <div class="row" @onclick='() => NavigationManager.NavigateTo($"/myhealth")'>
+                <h5>건강유튜브</h5>
+                <hr />
+            </div>
+            <div class="row">
+                @foreach (var healthYoutube in basicInfo.YoutubeRecomendations)
+                {
+                    <div class="col-6">
+                        <button type="button" @onclick='() => NavigationManager.NavigateTo($"/health-youtube-detail/{healthYoutube.VideoCode}")'>
+                            <img src="@healthYoutube.Thumbnail" class="rounded float-start" style="width:165px; height:85px">
+                        </button>
+                        <p>@healthYoutube.Title</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-4">
+        <div class="card col-12">
+            <div class="card-body">
+                <div class="row" @onclick='() => NavigationManager.NavigateTo($"/mydrug")'>
+                    <h5>내약알기</h5>
+                    <hr />
+                </div>
+                <div class="row">
+                    <div class="col-6" style="text-align:center">
+                        <h2>@drugInfo.IsTakingTotalCountAsync</h2>
+                        <p>복용 중인 약</p>
+                    </div>
+                    <div class="col-6" style="text-align:center">
+                        <h2>@drugInfo.ThisYearDrugTotalCountAsync</h2>
+                        <p>올해 처방약</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card col-12">
+            <div class="card-body">
+                <div class="row" @onclick='() => NavigationManager.NavigateTo($"/medical-histories")'>
+                    <h5>진료 및 투약내역</h5>
+                    <hr />
+                </div>
+                @foreach (var info in drugInfo.MedicalHistoryList)
+                {
+                    <div class="row">
+                        <div class="col-6">
+                            <h6 class="col-12">
+                                @info.HospitalPharmacyName
+                            </h6>
+                            <p class="col-12">
+                                @info.TreatStartDate
+                            </p>
+                        </div>
+                        <div class="col-2"></div>
+                        <div class="col-4">@info.TreatType</div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-4">
+        <div class="card col-12">
+            <div class="card-body">
+                <div class="row" @onclick='() => NavigationManager.NavigateTo($"/myhealth")'>
+                    <h5>건강데이터</h5>
+                    <hr />
+                </div>
+                @foreach (var info in healthInfo.HealthData)
+                {
+                    <div class="row">
+                        <div class="col-6">
+                            <h6 class="col-12">
+                                @info.LabKind
+                            </h6>
+                            <p class="col-12">
+                                @info.LabDate
+                            </p>
+                        </div>
+                        <div class="col-6"><p>@info.Value @info.Unit</p></div>
+                    </div>
+                }
+            </div>
+            <div class="card col-12">
+                <div class="card-body">
+                    <div class="row">
+                        <h5>건강체크</h5>
+                        <hr />
+                    </div>
+                    <p>@month 월</p>
+                    <div class="row">
+                        @foreach (var info in healthInfo.WeekCheck)
+                        {
+                            <div class="col-2">
+                                <p style="font-size: 10px">@info.Day</p>
+                                <p style="font-size: 10px">@ConvertDayOfWeekToKorean(info.DayOfWeek)</p>
+                                <p style="font-size: 10px">@info.IsBloodPress</p>
+                                <p style="font-size: 10px">@info.IsBloodSugar</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-4">
+        <div class="card col-12">
+            <div class="card-body">
+                <div class="row" @onclick='() => NavigationManager.NavigateTo($"/symptom")'>
+                    <h5>나의 증상</h5>
+                    <hr />
+                </div>
+                @foreach (var info in symptomInfo)
+                {
+                    <div class="row">
+                        <div class="col-6">
+                            <h6 class="col-12">
+                                @info.Keyword
+                            </h6>
+                            <p class="col-12">
+                                @info.RecordDate
+                            </p>
+                        </div>
+                        <div class="col-6"><p>@info.Value @info.Unit</p></div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code
+{
+    private BasicInfo basicInfo = new();
+    private DrugInfo drugInfo = new();
+    private HealthInfo healthInfo = new();
+    List<SymptomInfo> symptomInfo = [];
+    string month = DateTime.Now.Month.ToString();
+
+    protected override async Task OnInitializedAsync()
+    {
+        basicInfo = await HttpClient.GetFromJsonAsync<BasicInfo>($"/MyHome/web/basic-info") ?? new();
+
+        if (basicInfo.YoutubeRecomendations.Count > 0)
+        {
+            foreach (var data in basicInfo.YoutubeRecomendations)
+            {
+                if (data.Title.Length > 22)
+                {
+                    data.Title = data.Title.Substring(0, 22) + "...";
+                }
+                data.Thumbnail = $"https://i.ytimg.com/vi/{data.VideoId}/hqdefault.jpg";
+            }
+        }
+
+        drugInfo = await HttpClient.GetFromJsonAsync<DrugInfo>($"/MyHome/web/drug-info") ?? new();
+        healthInfo = await HttpClient.GetFromJsonAsync<HealthInfo>($"/MyHome/web/health-info") ?? new();
+        symptomInfo = await HttpClient.GetFromJsonAsync<List<SymptomInfo>>($"/MyHome/web/sysptom-info") ?? new();
+    }
+
+    public static string ConvertDayOfWeekToKorean(DayOfWeek day)
+    {
+        switch (day)
+        {
+            case DayOfWeek.Sunday: return "일";
+            case DayOfWeek.Monday: return "월";
+            case DayOfWeek.Tuesday: return "화";
+            case DayOfWeek.Wednesday: return "수";
+            case DayOfWeek.Thursday: return "목";
+            case DayOfWeek.Friday: return "금";
+            case DayOfWeek.Saturday: return "토";
+            default: throw new ArgumentOutOfRangeException(nameof(day), "올바르지 않은 요일입니다.");
+        }
+    }
+}

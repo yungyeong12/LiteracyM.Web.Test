@@ -1,0 +1,85 @@
+﻿@using Syncfusion.Blazor.Navigations
+@inject HttpClient HttpClient
+@using Syncfusion.Blazor.Popups
+@using Syncfusion.Blazor.Buttons
+
+@if (_results is not null)
+{
+    @if (_results.TotalCount > 0)
+    {
+        <div class="row">
+            @foreach (var result in _results.Data)
+            {
+                <div class="card col-4">
+                    <div class="card-body">
+                        <div class="row">
+                            @if (result.IsReply)
+                            {
+                                <button type="button" class="col-3 btn btn-outline-danger btn-sm">답변완료</button>
+                            }
+                            else
+                            {
+                                <button type="button" class="col-3 btn btn-outline-secondary btn-sm">답변대기</button>
+                            }
+                            <div class="col-5"></div>
+                            <div class="col-4"><p>@result.Date</p></div>
+                        </div>
+                        <div class="row">
+                            <h6 class="card-title col-10">@result.Title</h6>
+                            <button class="btn col-2" @onclick="() => GetQueryDetailAsync(result.Id)">></button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <SfDialog Width="600px" ShowCloseIcon="true" IsModal="true" @bind-Visible="Visibility">
+            <DialogTemplates>
+                <Header> 1대1 문의하기 </Header>
+                <Content>
+                    @if (_queryDetail.IsReply)
+                    {
+                        <button type="button" class="btn btn-outline-danger btn-sm">답변완료</button>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-outline-secondary btn-sm">답변대기</button>
+                    }
+                    <h5>@_queryDetail.Title</h5>
+                    <div class="card text-bg-light">
+                        <div class="card-body">
+                            @_queryDetail.Content
+                        </div>
+                    </div>
+                    <br/>
+                    @if (_queryDetail.IsReply)
+                    {
+                        <div class="card text-bg-danger">
+                            <div class="card-body">
+                                @_queryDetail.Reply
+                            </div>
+                        </div>
+                    }
+                </Content>
+            </DialogTemplates>
+        </SfDialog>
+    }
+}
+
+@code {
+    private CustomerQueryResults? _results;
+    private CustomerQueryDetail? _queryDetail;
+    private bool Visibility { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _results = await HttpClient.GetFromJsonAsync<CustomerQueryResults>("/CustomerQueries/1/10");
+    }
+
+    private async void GetQueryDetailAsync(int queryId)
+    {
+        _queryDetail = await HttpClient.GetFromJsonAsync<CustomerQueryDetail>($"/CustomerQueries/detail/{queryId}");
+        Visibility = true;
+        StateHasChanged();
+    }
+}

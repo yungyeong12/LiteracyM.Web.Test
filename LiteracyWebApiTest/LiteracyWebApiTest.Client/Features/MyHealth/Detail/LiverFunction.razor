@@ -1,0 +1,165 @@
+﻿@inject HttpClient HttpClient
+@using Syncfusion.Blazor.Charts
+@using Syncfusion.Blazor.Grids
+
+<div class="row">
+    <div class="col-4">
+        <h5>간기능</h5>
+    </div>
+    <div class="col-4"></div>
+    <div class="col-4" align="right">
+        <button type="button" class="btn btn-outline-secondary">큰 화면으로 보기</button>
+    </div>
+</div>
+
+<div class="btn-group" role="group" aria-label="Basic outlined example">
+    <button type="button" class="btn btn-outline-dark" @onclick="() => GetDifferentPeriodDataAsync(72)">전체</button>
+    <button type="button" class="btn btn-outline-dark" @onclick="() => GetDifferentPeriodDataAsync(6)">6개월</button>
+    <button type="button" class="btn btn-outline-dark" @onclick="() => GetDifferentPeriodDataAsync(24)">24개월</button>
+</div>
+
+@if (_liverFunction is not null && _liverFunction.Data.Count > 0)
+{
+    <p>총 <b style="color:red">@_liverFunction.Data.Count</b>건</p>
+    <br/>
+
+    <div class="card">
+        <div class="card-body">
+            <SfChart>
+                <ChartArea><ChartAreaBorder Width="0"></ChartAreaBorder></ChartArea>
+                <ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.DateTime">
+                    <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                </ChartPrimaryXAxis>
+                <ChartPrimaryYAxis Minimum="0" Maximum="100" Interval="25">
+                    <ChartAxisLineStyle Width="0"></ChartAxisLineStyle>
+                    <ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+                </ChartPrimaryYAxis>
+
+                <ChartSeriesCollection>
+                    <ChartSeries DataSource="@_liverFunctionPivotData.GraphTypeData.FirstOrDefault(item => item.Type == "AST")?.Data"
+                                 Name="AST" XName="Date" Width="2" Opacity="1" YName="Value" Fill="red" Type="ChartSeriesType.Line">
+                        <ChartMarker Visible="true" Width="6" Height="6" Shape="ChartShape.Circle">
+                        </ChartMarker>
+                    </ChartSeries>
+                    <ChartSeries DataSource="@_liverFunctionPivotData.GraphTypeData.FirstOrDefault(item => item.Type == "ALT")?.Data"
+                                 Name="ALT" XName="Date" Width="2" Opacity="1" YName="Value" Fill="orange" Type="ChartSeriesType.Line">
+                        <ChartMarker Visible="true" Width="6" Height="6" Shape="ChartShape.Circle">
+                        </ChartMarker>
+                    </ChartSeries>
+                    <ChartSeries DataSource="@_liverFunctionPivotData.GraphTypeData.FirstOrDefault(item => item.Type == "rGT")?.Data"
+                                 Name="rGT" XName="Date" Width="2" Opacity="1" YName="Value" Fill="green" Type="ChartSeriesType.Line">
+                        <ChartMarker Visible="true" Width="6" Height="6" Shape="ChartShape.Circle">
+                        </ChartMarker>
+                    </ChartSeries>
+                </ChartSeriesCollection>
+
+                <ChartLegendSettings Visible="true" Position="LegendPosition.Top" Alignment="Syncfusion.Blazor.Charts.Alignment.Far">
+                </ChartLegendSettings>
+            </SfChart>
+        </div>
+    </div>
+
+    <br/>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="col-lg-12 control-section">
+                <div class="content-wrapper">
+                    <div class="row">
+                        <SfGrid DataSource="@_liverFunction.Data">
+                            <GridColumns>
+                                <Syncfusion.Blazor.Grids.GridColumn HeaderText="일시" TextAlign="TextAlign.Center" Width="200">
+                                    <GridColumns>
+                                        <Syncfusion.Blazor.Grids.GridColumn Field=@nameof(LiverFunctionByDate.Date) TextAlign="TextAlign.Center" HeaderText="참고치"></Syncfusion.Blazor.Grids.GridColumn>
+                                    </GridColumns>
+                                </Syncfusion.Blazor.Grids.GridColumn>
+                                <Syncfusion.Blazor.Grids.GridColumn HeaderText="간효소(AST)" TextAlign="TextAlign.Center" Width="200">
+                                    <GridColumns>
+                                        <Syncfusion.Blazor.Grids.GridColumn Field=@nameof(LiverFunctionByDate.AST) TextAlign="TextAlign.Center" HeaderText="40이하"></Syncfusion.Blazor.Grids.GridColumn>
+                                    </GridColumns>
+                                </Syncfusion.Blazor.Grids.GridColumn>
+                                <Syncfusion.Blazor.Grids.GridColumn HeaderText="간효소(ALT)" TextAlign="TextAlign.Center" Width="200">
+                                    <GridColumns>
+                                        <Syncfusion.Blazor.Grids.GridColumn Field=@nameof(LiverFunctionByDate.ALT) TextAlign="TextAlign.Center" HeaderText="40이하"></Syncfusion.Blazor.Grids.GridColumn>
+                                    </GridColumns>
+                                </Syncfusion.Blazor.Grids.GridColumn>
+                                <Syncfusion.Blazor.Grids.GridColumn HeaderText="간효소(rGT)" TextAlign="TextAlign.Center" Width="200">
+                                    <GridColumns>
+                                        <Syncfusion.Blazor.Grids.GridColumn Field=@nameof(LiverFunctionByDate.rGT) TextAlign="TextAlign.Center" HeaderText="여성 35이하"></Syncfusion.Blazor.Grids.GridColumn>
+                                    </GridColumns>
+                                </Syncfusion.Blazor.Grids.GridColumn>
+                            </GridColumns>
+                        </SfGrid>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @foreach (var data in _liverFunction.Data)
+    {
+        <p> @data.Date : @data.AST : @data.ALT : @data.rGT </p>
+        <br />
+    }
+}
+
+@if (_liverFuntionLiteracy is not null)
+{
+    <div class="card">
+        <div class="card-body">
+            <h6 class="card-title">@_liverFuntionLiteracy.LiteracyName</h6>
+            <hr />
+            <p>@_liverFuntionLiteracy.LiteracyContent</p>
+        </div>
+    </div>
+    <br />
+
+    <div class="row">
+        @foreach (var youtubeContents in _liverFuntionLiteracy.YoutubeContentList)
+        {
+            <div class="col-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <img src="@youtubeContents.Thumbnail" class="rounded float-start" style="width:220px; height:130px">
+                        </div>
+                        <br />
+                        <h6 class="card-title">@youtubeContents.Title</h6>
+                        <p>@youtubeContents.Introduction</p>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+
+@code {
+    private LiverFunctionData? _liverFunction;
+    private LiteracyInfo? _liverFuntionLiteracy;
+    private PivotData? _liverFunctionPivotData;
+    private readonly DateTime _toDate = DateTime.Now;
+    private DateTime _fromDate = DateCalculate.CalculatePreviousMonthDate(72);
+
+    protected override async Task OnInitializedAsync()
+    {
+        _liverFunction = await HttpClient.GetFromJsonAsync<LiverFunctionData>($"/MyHealth/liver-function/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}/1/10");
+        _liverFuntionLiteracy = await HttpClient.GetFromJsonAsync<LiteracyInfo>("/MyHealth/literacy-information/liver-function");
+        _liverFunctionPivotData = await HttpClient.GetFromJsonAsync<PivotData>($"/MyHealth/graph/liver-function/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}");
+
+        foreach (var youtubeContents in _liverFuntionLiteracy.YoutubeContentList)
+        {
+            youtubeContents.Thumbnail = $"https://i.ytimg.com/vi/{youtubeContents.VideoId}/hqdefault.jpg";
+        }
+    }
+
+    public async void GetDifferentPeriodDataAsync(int months)
+    {
+        _fromDate = DateCalculate.CalculatePreviousMonthDate(months);
+
+        _liverFunction = await HttpClient.GetFromJsonAsync<LiverFunctionData>($"/MyHealth/liver-function/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}/1/10");
+        _liverFunctionPivotData = await HttpClient.GetFromJsonAsync<PivotData>($"/MyHealth/graph/liver-function/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}");
+
+        StateHasChanged();
+    }
+
+}

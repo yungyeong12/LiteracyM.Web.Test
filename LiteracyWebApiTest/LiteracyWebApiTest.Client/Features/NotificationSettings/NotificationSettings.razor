@@ -1,0 +1,169 @@
+﻿@page "/notification-settings"
+@inject HttpClient HttpClient
+@using Syncfusion.Blazor.Popups
+@using Syncfusion.Blazor.Calendars
+
+<h3>알림설정</h3>
+
+@if (_notificationSettings == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="row">
+        <div class="col-4">
+            @foreach(var key in _timeToKorean.Keys)
+            {
+                <div class="card" style="width: 18rem;">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-2">
+                                @*  Icon 딕셔너리에서 가져와야 됨 *@
+                            </div>
+                            <div class="col-4">
+                                <p>@_timeToKorean[key]</p>
+                            </div>
+                            <div class="col-6">
+                                <h4>@GetTime(key) <button class="btn col-2" @onclick="() => OnShowModalClick(key)">></button></h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <br />
+            }
+        </div>
+        <div class="col-8">
+            <div class="row">
+                <div class="col-6">
+                    <div class="card" style="width: 18rem;" onselect="">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-9">
+                                    <h5 class="card-title">오늘의 리터러시 알림</h5>
+                                </div>
+                                <div class="col-3">
+                                    @if (_notificationSettings.IsTodayLiteracyReminder)
+                                    {
+                                        <button type="button" class="btn btn-danger" @onclick="() => ChangeIsTodayLiteracyReminderAsync(false)">알림</button>
+                                    }
+                                    else
+                                    {
+                                        <button type="button" class="btn btn-secondary" @onclick="() => ChangeIsTodayLiteracyReminderAsync(true)">거부</button>
+                                    }
+                                </div>
+                            </div>
+                            <p>내약알기, 건강데이터 리터러시와 서비스 알림을 받습니다.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    마게팅 정보 알림
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <SfDialog Width="335px" IsModal="true" @bind-Visible="Visibility">
+        <DialogTemplates>
+            <Header> 시간을 선택해주세요 </Header>
+            <Content>
+                <SfTimePicker TValue="TimeOnly" FullScreen="true" ShowClearButton="true" @bind-Value="@_timeToChange"></SfTimePicker>
+            </Content>
+        </DialogTemplates>
+        <DialogButtons>
+            <DialogButton Content="취소" OnClick="@OnHideModalClick" />
+            <DialogButton Content="확인" IsPrimary="true" OnClick="@ChangeTime" />
+        </DialogButtons>
+    </SfDialog>
+}
+
+@code {
+    private string _key = string.Empty;
+    private TimeOnly _timeToChange = new (0,0);
+    private bool Visibility { get; set; } = false;
+
+    private NotificationSettingsData? _notificationSettings;
+    private readonly Dictionary<string, string> _timeToKorean = new()
+    {
+        { "AfterWakingUp", "기상직후" },
+        { "Morning", "아침" },
+        { "Lunch", "점심" },
+        { "Dinner", "저녁" },
+        { "BeforeBedTime", "취침전" }
+    };
+    // private readonly Dictionary<string, IconName> _timeIcons = new()
+    // {
+    //     { "AfterWakingUp", IconName.SunriseFill },
+    //     { "Morning", IconName.Sunrise },
+    //     { "Lunch", IconName.Sun },
+    //     { "Dinner", IconName.Sunset },
+    //     { "BeforeBedTime", IconName.SunsetFill }
+    // };
+
+    protected override async Task OnInitializedAsync()
+    {
+        _notificationSettings = await HttpClient.GetFromJsonAsync<NotificationSettingsData>("/Account/reminder-setting");
+    }
+
+    private async void ChangeIsTodayLiteracyReminderAsync(bool isReminder)
+    {
+        var addQuery = new NotificationSettingsData { ReminderSettings = _notificationSettings .ReminderSettings, IsTodayLiteracyReminder = isReminder };
+        var result = await HttpClient.PostAsJsonAsync("/Account/reminder-setting", addQuery);
+
+        if (result.IsSuccessStatusCode)
+        {
+            _notificationSettings.IsTodayLiteracyReminder = !_notificationSettings.IsTodayLiteracyReminder;
+            StateHasChanged();
+        }
+    }
+
+    public string GetTime(string timeName)
+    {
+        string result = timeName switch
+        {
+            "AfterWakingUp" => _notificationSettings.ReminderSettings.AfterWakingUp,
+            "Morning" => _notificationSettings.ReminderSettings.Morning,
+            "Lunch" => _notificationSettings.ReminderSettings.Lunch,
+            "Dinner" => _notificationSettings.ReminderSettings.Dinner,
+            "BeforeBedTime" => _notificationSettings.ReminderSettings.BeforeBedTime,
+            _ => throw new ArgumentException("해당하는 데이터가 없습니다."),
+        };
+
+        return result;
+    }
+
+    private void OnShowModalClick(string key)
+    {
+        _key = key;
+        _timeToChange = TimeOnly.Parse(GetTime(key));
+        Visibility = true;
+        StateHasChanged();
+    }
+
+    private void OnHideModalClick()
+    {
+        Visibility = false;
+        StateHasChanged();
+    }
+
+    private async void ChangeTime()
+    {
+        var originalTime = GetTime(_key);
+        var reminderSettings = _notificationSettings.ReminderSettings;
+        reminderSettings.GetType().GetProperty(_key)?.SetValue(reminderSettings, _timeToChange.ToString("HH:mm"));
+
+        var addQuery = new NotificationSettingsData() { ReminderSettings = reminderSettings, IsTodayLiteracyReminder = _notificationSettings.IsTodayLiteracyReminder };
+        var result = await HttpClient.PostAsJsonAsync("/Account/reminder-setting", addQuery);
+
+        if (result.IsSuccessStatusCode)
+        {
+            Visibility = false;
+            StateHasChanged();
+        }
+        else
+        {
+            reminderSettings.GetType().GetProperty(_key)?.SetValue(reminderSettings, originalTime);
+        }
+    }
+}

@@ -1,0 +1,81 @@
+﻿@inject HttpClient HttpClient
+
+<div class="row">
+    <div class="col-4">
+        <div class="row">
+            <div class="col-3">
+                @if (_myDrugs is not null)
+                {
+                    <p>총 <b style="color:red">@_myDrugs.Length</b> 건</p>
+                }
+            </div>
+            <div class="col-3"></div>
+            <div class="col-6">
+                <select class="form-select" aria-label="Default select example" @onchange="GetSelectedYearDrugInfoAsync">
+                    @foreach (var year in recentYears)
+                    {
+                        <option value="@year">@year</option>
+                    }
+                </select>
+            </div>
+        </div>
+        @if (_myDrugs is not null)
+        {
+            @foreach (var drug in _myDrugs)
+            {
+                <DrugForEachDiseaseCard Drug="@drug" OnSelected="@HandleDrugSelected"/>
+            }
+        }
+    </div>
+    <div class="col-8">
+        @if (_detailActive)
+        {
+            <DrugDetailForEachDisease SelectedDrug="_selectedDrug" />
+        }
+    </div>
+</div>
+
+@code {
+    private DrugInfoForEachDisease[]? _myDrugs;
+    private DrugInfoForEachDisease? _selectedDrug;
+    private List<int> recentYears = new();
+    private bool _detailActive = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var currentYear = DateTime.Now.Year;
+
+        for (var i = 0; i < 4; i++)
+        {
+            recentYears.Add(currentYear - i);
+        }
+        
+        _myDrugs = await HttpClient.GetFromJsonAsync<DrugInfoForEachDisease[]>($"/MyDrugs/this-drugs/{currentYear}");
+
+        if (_myDrugs is not null)
+        {
+            _detailActive = true;
+            _selectedDrug = _myDrugs[0];
+        }
+    }
+
+    private void HandleDrugSelected(DrugInfoForEachDisease drug)
+        => _selectedDrug = drug;
+
+    public async void GetSelectedYearDrugInfoAsync(ChangeEventArgs e)
+    {
+        _myDrugs = await HttpClient.GetFromJsonAsync<DrugInfoForEachDisease[]>($"/MyDrugs/this-drugs/{e.Value}");
+
+        if (_myDrugs.Any())
+        {
+            _detailActive = true;
+            _selectedDrug = _myDrugs[0];
+        }
+        else
+        {
+            _detailActive = false;
+        }
+
+        StateHasChanged();
+    }
+}

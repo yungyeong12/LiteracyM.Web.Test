@@ -1,0 +1,50 @@
+﻿@page "/customer-support"
+@inject HttpClient HttpClient
+
+<h3>CustomerSupport</h3>
+
+@if (_faqCategories == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div>
+        @foreach (var faqCategory in _faqCategories)
+        {
+            <button @onclick="() => GetFaqInfoAsync(faqCategory.Code)">@faqCategory.KoreanName</button>
+        }
+    </div>
+
+    <br/>
+    <br />
+
+    <div>
+        @if (_faqInformations is not null)
+        {
+            @foreach (var faqInformation in _faqInformations)
+            {
+                <p>@faqInformation.Title</p>
+                <p>@faqInformation.Content</p>
+                <hr />
+            }
+        }
+    </div>
+}
+
+@code {
+    private FaqCategory[]? _faqCategories;
+    private FaqInformation[]? _faqInformations;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _faqCategories = await HttpClient.GetFromJsonAsync<FaqCategory[]>("/Support/faq/category");
+        GetFaqInfoAsync(_faqCategories[0].Code);
+    }
+
+    private async void GetFaqInfoAsync(string categoryCode)
+    {
+        _faqInformations = await HttpClient.GetFromJsonAsync<FaqInformation[]>($"/Support/faq/category/{categoryCode}");
+        StateHasChanged();
+    }
+}

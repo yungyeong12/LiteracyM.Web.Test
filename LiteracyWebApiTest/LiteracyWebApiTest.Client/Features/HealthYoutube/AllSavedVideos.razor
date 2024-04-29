@@ -1,0 +1,36 @@
+﻿@page "/all-saved-videos"
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+
+<h4>최근 본 영상</h4>
+<br/>
+
+@foreach (var video in recentlyVideos)
+{
+    <div class="row">
+        <div class="col-5">
+            <div class="row">
+                <img src="@video.Thumbnail" class="rounded float-start" style="width:320px; height:190px">
+            </div>
+        </div>
+        <div class="col-7">
+            <div class="row">
+                @video.ParentClassification > @video.Classification
+            </div>
+            <br/>
+            <h5>@video.Title</h5>
+            <br/>
+            <p>@video.Introduction</p>
+        </div>
+    </div>
+}
+
+@code {
+    private List<SavedVideoInfo> recentlyVideos = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        recentlyVideos = await LocalStorage.GetItemAsync<List<SavedVideoInfo>>("recentlyVideos") ?? new();
+        recentlyVideos = recentlyVideos.OrderByDescending(video => DateTime.ParseExact(video.Date, "yyyy-MM-dd HH:mm:ss", null))
+            .ToList();
+    }
+}

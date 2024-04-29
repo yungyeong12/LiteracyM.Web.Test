@@ -1,0 +1,19 @@
+﻿<div class="card" style="width: 18rem;" onselect="">
+    <div class="card-body">
+        <h5 class="card-title">@Drug.HospitalName @Drug.TreatType</h5>
+        <p>@Drug.TreatDate</p>
+        <p>방문(입원)일수 @Drug.NumberOfVisits | 처방횟수 @Drug.NumberOfPrescriptions | 투여(요양)횟수 @Drug.NumberOfDosing</p>
+    </div>
+    @if (Drug.TreatType == "처방조제")
+    {
+        <button class="btn" @onclick="@(async () => await OnSelected.InvokeAsync(@Drug))">>></button>
+    }
+</div>
+<br/>
+
+@code {
+    [Parameter, EditorRequired]
+    public MedicalHistoryInfo.PrescriptionDrug Drug { get; set; } = default!;
+    [Parameter]
+    public EventCallback<MedicalHistoryInfo.PrescriptionDrug> OnSelected { get; set; }
+}

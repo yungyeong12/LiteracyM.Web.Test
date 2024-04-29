@@ -1,0 +1,310 @@
+﻿@inject HttpClient HttpClient
+@using Syncfusion.Blazor
+@using Syncfusion.Blazor.Navigations
+@using Syncfusion.Blazor.Charts
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Buttons
+
+<div class="row">
+    <div class="col-4">
+        <h5>크레아티닌/사구체여과율</h5>
+    </div>
+    <div class="col-4"></div>
+    <div class="col-4" align="right">
+        <button type="button" class="btn btn-outline-secondary">큰 화면으로 보기</button>
+    </div>
+</div>
+
+<div class="btn-group" role="group" aria-label="Basic outlined example">
+    <button type="button" class="btn btn-outline-dark" @onclick="() => GetDifferentPeriodDataAsync(72)">전체</button>
+    <button type="button" class="btn btn-outline-dark" @onclick="() => GetDifferentPeriodDataAsync(6)">6개월</button>
+    <button type="button" class="btn btn-outline-dark" @onclick="() => GetDifferentPeriodDataAsync(24)">24개월</button>
+</div>
+
+@if (_creatinineWithGFR is not null && _creatinineWithGFR.Data.Count > 0)
+{
+    <div class="row">
+        <p class="col-3">총 <b style="color:red">@_creatinineWithGFR.Data.Count</b>건</p>
+        <div class="col-6"></div>
+        <div class="col-3" align="right">
+            <SfSwitch @bind-Checked="@isChecked" ValueChange="Change" TChecked="bool"></SfSwitch>
+        </div>
+    </div>
+    <br/>
+
+    @if (_creatinineWithGFRPivotData is not null)
+    {
+        <SfTab CssClass=@("default-tab ")>
+            <TabAnimationSettings>
+                <TabAnimationPrevious Effect=AnimationEffect.None></TabAnimationPrevious>
+                <TabAnimationNext Effect=AnimationEffect.None></TabAnimationNext>
+            </TabAnimationSettings>
+            <TabItems>
+                <TabItem>
+                    <ChildContent>
+                        <TabHeader Text="크레아티닌"></TabHeader>
+                    </ChildContent>
+                    <ContentTemplate>
+                        <SfChart>
+                            <ChartArea><ChartAreaBorder Width="0"></ChartAreaBorder></ChartArea>
+                            <ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.DateTime">
+                                <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                            </ChartPrimaryXAxis>
+
+                            <ChartPrimaryYAxis Minimum="0" Maximum="5" Interval="1">
+                                <ChartAxisLineStyle Width="0"></ChartAxisLineStyle>
+                                <ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+                                <ChartStriplines>
+                                    <ChartStripline Start="0" End="1.2" Opacity="0.5" Color="#fcb3b1" Visible="true">
+                                        <ChartStriplineBorder Width="0"></ChartStriplineBorder>
+                                    </ChartStripline>
+                                </ChartStriplines>
+                            </ChartPrimaryYAxis>
+
+                            <ChartSeriesCollection>
+                                <ChartSeries DataSource="@_creatinineWithGFRPivotData.GraphTypeData.FirstOrDefault(item => item.Type == "creatinine")?.Data"
+                                             Name="크레아티닌" XName="Date" Width="2" Opacity="1" YName="Value" Fill="red" Type="ChartSeriesType.Line">
+                                    <ChartMarker Visible="true" Width="6" Height="6" Shape="ChartShape.Circle">
+                                    </ChartMarker>
+                                </ChartSeries>
+                            </ChartSeriesCollection>
+
+                            <ChartLegendSettings Visible="true" Position="LegendPosition.Top" Alignment="Syncfusion.Blazor.Charts.Alignment.Far">
+                            </ChartLegendSettings>
+                        </SfChart>
+                    </ContentTemplate>
+                </TabItem>
+                <TabItem>
+                    <ChildContent>
+                        <TabHeader Text="사구체여과율"></TabHeader>
+                    </ChildContent>
+                    <ContentTemplate>
+                        <SfChart>
+                            <ChartArea><ChartAreaBorder Width="0"></ChartAreaBorder></ChartArea>
+                            <ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.DateTime">
+                                <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                            </ChartPrimaryXAxis>
+
+                            <ChartPrimaryYAxis Minimum="0" Maximum="80" Interval="20">
+                                <ChartAxisLineStyle Width="0"></ChartAxisLineStyle>
+                                <ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+                                <ChartStriplines>
+                                    <ChartStripline Start="60" End="80" Opacity="0.5" Color="#b1fcb6" Visible="true">
+                                        <ChartStriplineBorder Width="0"></ChartStriplineBorder>
+                                    </ChartStripline>
+                                </ChartStriplines>
+                            </ChartPrimaryYAxis>
+
+                            <ChartSeriesCollection>
+                                <ChartSeries DataSource="@_creatinineWithGFRPivotData.GraphTypeData.FirstOrDefault(item => item.Type == "gfr")?.Data"
+                                             Name="중성지방" XName="Date" Width="2" Opacity="1" YName="Value" Fill="green" Type="ChartSeriesType.Line">
+                                    <ChartMarker Visible="true" Width="6" Height="6" Shape="ChartShape.Circle">
+                                    </ChartMarker>
+                                </ChartSeries>
+                            </ChartSeriesCollection>
+
+                            <ChartLegendSettings Visible="true" Position="LegendPosition.Top" Alignment="Syncfusion.Blazor.Charts.Alignment.Far">
+                            </ChartLegendSettings>
+                        </SfChart>
+                    </ContentTemplate>
+                </TabItem>
+            </TabItems>
+        </SfTab>
+    }
+    <br/>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="col-lg-12 control-section">
+                <div class="content-wrapper">
+                    <div class="row">
+                        <SfGrid DataSource="@_creatinineWithGFR.Data" @ref="Grid">
+                            <GridColumns>
+                                <Syncfusion.Blazor.Grids.GridColumn HeaderText="일시" TextAlign="TextAlign.Center" Width="200">
+                                    <GridColumns>
+                                        <Syncfusion.Blazor.Grids.GridColumn Field=@nameof(CreatinineWithGFRByDate.Date) TextAlign="TextAlign.Center" HeaderText="참고치"></Syncfusion.Blazor.Grids.GridColumn>
+                                    </GridColumns>
+                                </Syncfusion.Blazor.Grids.GridColumn>
+                                <Syncfusion.Blazor.Grids.GridColumn HeaderText="크레아티닌" TextAlign="TextAlign.Center" Width="300">
+                                    <GridColumns>
+                                        <Syncfusion.Blazor.Grids.GridColumn Field=@nameof(CreatinineWithGFRByDate.Creatinine) TextAlign="TextAlign.Center" HeaderText=@GetCreatinineHeaderText(isChecked)></Syncfusion.Blazor.Grids.GridColumn>
+                                    </GridColumns>
+                                </Syncfusion.Blazor.Grids.GridColumn>
+                                <Syncfusion.Blazor.Grids.GridColumn HeaderText="사구체여과율" TextAlign="TextAlign.Center" Width="300">
+                                    <GridColumns>
+                                        <Syncfusion.Blazor.Grids.GridColumn Field=@nameof(CreatinineWithGFRByDate.GFR) TextAlign="TextAlign.Center" HeaderText="60이상"></Syncfusion.Blazor.Grids.GridColumn>
+                                    </GridColumns>
+                                </Syncfusion.Blazor.Grids.GridColumn>
+                            </GridColumns>
+                        </SfGrid>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (_creatinineLiteracy is not null)
+{
+    <div class="card">
+        <div class="card-body">
+            <h6 class="card-title">@_creatinineLiteracy.LiteracyName</h6>
+            <hr />
+            <p>@_creatinineLiteracy.LiteracyContent</p>
+        </div>
+    </div>
+    <br />
+
+    <div class="row">
+        @foreach (var youtubeContents in _creatinineLiteracy.YoutubeContentList)
+        {
+            <div class="col-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <img src="@youtubeContents.Thumbnail" class="rounded float-start" style="width:220px; height:130px">
+                        </div>
+                        <br />
+                        <h6 class="card-title">@youtubeContents.Title</h6>
+                        <p>@youtubeContents.Introduction</p>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+
+@code {
+    private CreatinineWithGFRData? _creatinineWithGFR;
+    private LiteracyInfo? _creatinineLiteracy;
+    private PivotData? _creatinineWithGFRPivotData;
+    private decimal? creatinineGlobalUnit;
+    private decimal? gfrGlobalUnit;
+    private bool isChecked = false;
+    private readonly DateTime _toDate = DateTime.Now;
+    private DateTime _fromDate = DateCalculate.CalculatePreviousMonthDate(72);
+    private SfGrid<CreatinineWithGFRByDate> Grid;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _creatinineWithGFR = await HttpClient.GetFromJsonAsync<CreatinineWithGFRData>($"/MyHealth/creatinine-with-gfr/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}/1/10");
+        _creatinineLiteracy = await HttpClient.GetFromJsonAsync<LiteracyInfo>("/MyHealth/literacy-information/creatinine-with-gfr");
+        _creatinineWithGFRPivotData = await HttpClient.GetFromJsonAsync<PivotData>($"/MyHealth/graph/creatinine-with-gfr/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}");
+
+        foreach (var youtubeContents in _creatinineLiteracy.YoutubeContentList)
+        {
+            youtubeContents.Thumbnail = $"https://i.ytimg.com/vi/{youtubeContents.VideoId}/hqdefault.jpg";
+        }
+
+        var result = await HttpClient.GetFromJsonAsync<ExamItemUnitsModel[]>($"/Unit/ExamItemUnits/{RecordDivisions.건강검진결과}");
+        creatinineGlobalUnit = result.FirstOrDefault(item => item.KoreanName == "크레아티닌").Units.FirstOrDefault().RateToSIUnit;
+        gfrGlobalUnit = result.FirstOrDefault(item => item.KoreanName == "신사구체여과율(GFR)").Units.FirstOrDefault().RateToSIUnit;
+    }
+
+    public async void GetDifferentPeriodDataAsync(int months)
+    {
+        _fromDate = DateCalculate.CalculatePreviousMonthDate(months);
+
+        _creatinineWithGFR = await HttpClient.GetFromJsonAsync<CreatinineWithGFRData>($"/MyHealth/creatinine-with-gfr/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}/1/10");
+        _creatinineWithGFRPivotData = await HttpClient.GetFromJsonAsync<PivotData>($"/MyHealth/graph/creatinine-with-gfr/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}");
+
+        StateHasChanged();
+    }
+
+    private async void Change(Syncfusion.Blazor.Buttons.ChangeEventArgs<bool> args)
+    {
+        if (args.Checked == true)
+        {
+            foreach (var data in _creatinineWithGFR.Data)
+            {
+                if (data.Creatinine != "-")
+                {
+                    data.Creatinine = (decimal.Parse(data.Creatinine) * creatinineGlobalUnit).ToString().TrimEnd('0');
+                    if (data.Creatinine.EndsWith("."))
+                    {
+                        data.Creatinine = data.Creatinine.TrimEnd('.');
+                    }
+                }
+
+                if (data.GFR != "-")
+                {
+                    data.GFR = (decimal.Parse(data.GFR) * gfrGlobalUnit).ToString().TrimEnd('0');
+                    if (data.GFR.EndsWith("."))
+                    {
+                        data.GFR = data.GFR.TrimEnd('.');
+                    }
+                }
+            }
+        }
+        else
+        {
+            _creatinineWithGFR = await HttpClient.GetFromJsonAsync<CreatinineWithGFRData>($"/MyHealth/creatinine-with-gfr/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}/1/10");
+        }
+        StateHasChanged();
+        Grid.Refresh();
+        // Your code here.
+    }
+
+    private string GetCreatinineHeaderText(bool isChecked)
+    {
+        if (isChecked)
+        {
+            return "여 88.30이하";
+        }
+        else
+        {
+            return "여 1.0이하";
+        }
+    }
+
+}
+
+<style>
+    .default-tab {
+        border: 1px solid #d7d7d7;
+    }
+
+    .default-tab .e-content .e-item {
+        padding: 10px;
+        text-align: justify;
+    }
+
+    .default-tab-control-section {
+        margin: 20px 20% 20px 20%;
+    }
+
+    @@media screen and (max-width: 480px) {
+        .default-tab-control-section {
+            margin: 20px 0 20px 0;
+        }
+    }
+
+    .bootstrap5 .default-tab,
+    .bootstrap5-dark .default-tab,
+    .bootstrap .default-tab,
+    .bootstrap-dark .default-tab,
+    .bootstrap4 .default-tab {
+        border: none;
+    }
+
+    .fluent .default-tab .e-content > .e-item.e-active,
+    .bootstrap5 .default-tab .e-content > .e-item.e-active,
+    .tailwind .default-tab .e-content > .e-item.e-active,
+    .material .default-tab .e-content > .e-item.e-active,
+    .bootstrap4 .default-tab .e-content > .e-item.e-active,
+    .bootstrap .default-tab .e-content > .e-item.e-active,
+    .fabric .default-tab .e-content > .e-item.e-active {
+        background: #FAF9F8;
+    }
+
+    .fluent-dark .default-tab .e-content > .e-item.e-active,
+    .bootstrap5-dark .default-tab .e-content > .e-item.e-active,
+    .tailwind-dark .default-tab .e-content > .e-item.e-active,
+    .material-dark .default-tab .e-content > .e-item.e-active,
+    .bootstrap-dark .default-tab .e-content > .e-item.e-active,
+    .fabric-dark .default-tab .e-content > .e-item.e-active,
+    .highcontrast .default-tab .e-content > .e-item.e-active {
+        background: #201F1E;
+    }
+</style>

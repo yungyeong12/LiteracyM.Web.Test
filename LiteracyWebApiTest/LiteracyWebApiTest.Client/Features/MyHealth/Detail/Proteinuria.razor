@@ -1,0 +1,149 @@
+﻿@inject HttpClient HttpClient
+@using Syncfusion.Blazor.Charts
+@using Syncfusion.Blazor.Grids
+
+<div class="row">
+    <div class="col-4">
+        <h5>단백뇨</h5>
+    </div>
+    <div class="col-4"></div>
+    <div class="col-4" align="right">
+        <button type="button" class="btn btn-outline-secondary">큰 화면으로 보기</button>
+    </div>
+</div>
+
+<div class="btn-group" role="group" aria-label="Basic outlined example">
+    <button type="button" class="btn btn-outline-dark" @onclick="() => GetDifferentPeriodDataAsync(72)">전체</button>
+    <button type="button" class="btn btn-outline-dark" @onclick="() => GetDifferentPeriodDataAsync(6)">6개월</button>
+    <button type="button" class="btn btn-outline-dark" @onclick="() => GetDifferentPeriodDataAsync(24)">24개월</button>
+</div>
+
+@if (_proteinuria is not null && _proteinuria.Data.Count > 0)
+{
+    <p>총 <b style="color:red">@_proteinuria.Data.Count</b>건</p>
+    <br/>
+
+    <div class="card">
+        <div class="card-body">
+            <SfChart>
+                <ChartArea><ChartAreaBorder Width="0"></ChartAreaBorder></ChartArea>
+                <ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.DateTime">
+                    <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                </ChartPrimaryXAxis>
+                <ChartPrimaryYAxis Minimum="0" Maximum="500" Interval="100">
+                    <ChartAxisLineStyle Width="0"></ChartAxisLineStyle>
+                    <ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+                </ChartPrimaryYAxis>
+
+                <ChartSeriesCollection>
+                    <ChartSeries DataSource="@_proteinuriaPivotData.GraphTypeData.FirstOrDefault(item => item.Type == "proteinuria")?.Data"
+                                 Name="단백뇨" XName="Date" Width="2" Opacity="1" YName="Value" Fill="orange" Type="ChartSeriesType.Line">
+                        <ChartMarker Visible="true" Width="6" Height="6" Shape="ChartShape.Circle">
+                        </ChartMarker>
+                    </ChartSeries>
+                </ChartSeriesCollection>
+
+                <ChartLegendSettings Visible="true" Position="LegendPosition.Top" Alignment="Syncfusion.Blazor.Charts.Alignment.Far">
+                </ChartLegendSettings>
+            </SfChart>
+        </div>
+    </div>
+
+    <br/>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="col-lg-12 control-section">
+                <div class="content-wrapper">
+                    <div class="row">
+                        <SfGrid DataSource="@_proteinuria.Data">
+                            <GridColumns>
+                                <Syncfusion.Blazor.Grids.GridColumn HeaderText="일시" TextAlign="TextAlign.Center" Width="200">
+                                    <GridColumns>
+                                        <Syncfusion.Blazor.Grids.GridColumn Field=@nameof(ProteinuriaByDate.Date) TextAlign="TextAlign.Center" HeaderText="참고치"></Syncfusion.Blazor.Grids.GridColumn>
+                                    </GridColumns>
+                                </Syncfusion.Blazor.Grids.GridColumn>
+                                <Syncfusion.Blazor.Grids.GridColumn HeaderText="단백뇨(반정량)" TextAlign="TextAlign.Center" Width="200">
+                                    <GridColumns>
+                                        <Syncfusion.Blazor.Grids.GridColumn Field=@nameof(ProteinuriaByDate.SemiQuantitative) TextAlign="TextAlign.Center" HeaderText="음성"></Syncfusion.Blazor.Grids.GridColumn>
+                                    </GridColumns>
+                                </Syncfusion.Blazor.Grids.GridColumn>
+                                <Syncfusion.Blazor.Grids.GridColumn HeaderText="단백뇨(PCR)" TextAlign="TextAlign.Center" Width="200">
+                                    <GridColumns>
+                                        <Syncfusion.Blazor.Grids.GridColumn Field=@nameof(ProteinuriaByDate.Proteinuria) TextAlign="TextAlign.Center" HeaderText="300 이하"></Syncfusion.Blazor.Grids.GridColumn>
+                                    </GridColumns>
+                                </Syncfusion.Blazor.Grids.GridColumn>
+                                <Syncfusion.Blazor.Grids.GridColumn HeaderText="알부민뇨(ACR)" TextAlign="TextAlign.Center" Width="200">
+                                    <GridColumns>
+                                        <Syncfusion.Blazor.Grids.GridColumn Field=@nameof(ProteinuriaByDate.Albuminuria) TextAlign="TextAlign.Center" HeaderText="30이하"></Syncfusion.Blazor.Grids.GridColumn>
+                                    </GridColumns>
+                                </Syncfusion.Blazor.Grids.GridColumn>
+                            </GridColumns>
+                        </SfGrid>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (_proteinuriaLiteracy is not null)
+{
+    <div class="card">
+        <div class="card-body">
+            <h6 class="card-title">@_proteinuriaLiteracy.LiteracyName</h6>
+            <hr />
+            <p>@_proteinuriaLiteracy.LiteracyContent</p>
+        </div>
+    </div>
+    <br />
+
+    <div class="row">
+        @foreach (var youtubeContents in _proteinuriaLiteracy.YoutubeContentList)
+        {
+            <div class="col-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <img src="@youtubeContents.Thumbnail" class="rounded float-start" style="width:220px; height:130px">
+                        </div>
+                        <br />
+                        <h6 class="card-title">@youtubeContents.Title</h6>
+                        <p>@youtubeContents.Introduction</p>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private ProteinuriaData? _proteinuria;
+    private LiteracyInfo? _proteinuriaLiteracy;
+    private PivotData? _proteinuriaPivotData;
+    private readonly DateTime _toDate = DateTime.Now;
+    private DateTime _fromDate = DateCalculate.CalculatePreviousMonthDate(72);
+
+    protected override async Task OnInitializedAsync()
+    {
+        _proteinuria = await HttpClient.GetFromJsonAsync<ProteinuriaData>($"/MyHealth/proteinuria/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}/1/10");
+        _proteinuriaLiteracy = await HttpClient.GetFromJsonAsync<LiteracyInfo>("/MyHealth/literacy-information/proteinuria");
+        _proteinuriaPivotData = await HttpClient.GetFromJsonAsync<PivotData>($"/MyHealth/graph/proteinuria/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}");
+
+        foreach (var youtubeContents in _proteinuriaLiteracy.YoutubeContentList)
+        {
+            youtubeContents.Thumbnail = $"https://i.ytimg.com/vi/{youtubeContents.VideoId}/hqdefault.jpg";
+        }
+    }
+
+    public async void GetDifferentPeriodDataAsync(int months)
+    {
+        _fromDate = DateCalculate.CalculatePreviousMonthDate(months);
+
+        _proteinuria = await HttpClient.GetFromJsonAsync<ProteinuriaData>($"/MyHealth/proteinuria/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}/1/10");
+        _proteinuriaPivotData = await HttpClient.GetFromJsonAsync<PivotData>($"/MyHealth/graph/proteinuria/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}");
+
+        StateHasChanged();
+    }
+
+}

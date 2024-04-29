@@ -1,0 +1,198 @@
+﻿@inject HttpClient HttpClient
+@using Syncfusion.Blazor.Charts
+@using Syncfusion.Blazor.Grids
+
+<div class="row">
+    <div class="col-4">
+        <h5>혈압</h5>
+    </div>
+    <div class="col-4"></div>
+    <div class="col-4" align="right">
+        <button type="button" class="btn btn-outline-secondary">큰 화면으로 보기</button>
+    </div>
+</div>
+
+<div class="btn-group" role="group" aria-label="Basic outlined example">
+    <button type="button" class="btn btn-outline-dark" @onclick="() => GetDifferentPeriodDataAsync(60)">전체</button>
+    <button type="button" class="btn btn-outline-dark" @onclick="() => GetDifferentPeriodDataAsync(1)">1개월</button>
+    <button type="button" class="btn btn-outline-dark" @onclick="() => GetDifferentPeriodDataAsync(3)">3개월</button>
+</div>
+
+@if (_bloodPressure is not null && _bloodPressure.Data.Count > 0)
+{
+    <div class="row">
+        <div class="col-3">
+            <p>총 <b style="color:red">@_bloodPressure.Data.Count</b>건</p>
+        </div>
+        <div class="col-5"></div>
+        <div class="col-4">
+            <p style="color:red">고혈압 기준 120/90mmHg</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-4">
+                    <h6>수축기 평균</h6>
+                    <h6>@_bloodPressure.AvgSystolic mmHg</h6>
+                </div>
+                <div class="col-4">
+                    <h6>이완기 평균</h6>
+                    <h6>@_bloodPressure.AvgDiastolic mmHg</h6>
+                </div>
+                <div class="col-4">
+                    <h6>맥박 평균</h6>
+                    <h6>@_bloodPressure.AvgPulse BPM</h6>
+                </div>
+            </div>
+        </div>
+    </div>
+    <br/>
+
+    @if (_bloodPressurePivotData is not null)
+    {
+        <div class="card">
+            <div class="card-body">
+                <SfChart>
+                    <ChartArea><ChartAreaBorder Width="0"></ChartAreaBorder></ChartArea>
+                    <ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.DateTime">
+                        <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                    </ChartPrimaryXAxis>
+                    <ChartPrimaryYAxis Minimum="0" Maximum="200" Interval="20">
+                        <ChartAxisLineStyle Width="0"></ChartAxisLineStyle>
+                        <ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+                        
+                        <ChartStriplines>
+                            <ChartStripline Start="85" End="125" Opacity="0.5" Color="#fcfbc0" Visible="true">
+                                <ChartStriplineBorder Width="0"></ChartStriplineBorder>
+                            </ChartStripline>
+                            <ChartStripline Start="60" End="85" Opacity="0.5" Color="#dee9fa" Visible="true">
+                                <ChartStriplineBorder Width="0"></ChartStriplineBorder>
+                            </ChartStripline>
+                        </ChartStriplines>
+                    </ChartPrimaryYAxis>
+
+                    <ChartSeriesCollection>
+                        <ChartSeries DataSource="@_bloodPressurePivotData.GraphTypeData.FirstOrDefault(item => item.Type == "systolic")?.Data"
+                                     Name="수축기" XName="Date" Width="2" Opacity="1" YName="Value" Fill="orange" Type="ChartSeriesType.Line">
+                            <ChartMarker Visible="true" Width="6" Height="6" Shape="ChartShape.Circle">
+                            </ChartMarker>
+                        </ChartSeries>
+                        <ChartSeries DataSource="@_bloodPressurePivotData.GraphTypeData.FirstOrDefault(item => item.Type == "diastolic")?.Data"
+                                     Name="이완기" XName="Date" Width="2" Opacity="1" YName="Value" Fill="blue" Type="ChartSeriesType.Line">
+                            <ChartMarker Visible="true" Width="6" Height="6" Shape="ChartShape.Circle">
+                            </ChartMarker>
+                        </ChartSeries>
+                    </ChartSeriesCollection>
+
+                    <ChartLegendSettings Visible="true" Position="LegendPosition.Top" Alignment="Syncfusion.Blazor.Charts.Alignment.Far">
+                    </ChartLegendSettings>
+                </SfChart>
+            </div>
+        </div>
+    }
+    <br />
+
+    <div class="card">
+        <div class="card-body">
+            <div class="col-lg-12 control-section">
+                <div class="content-wrapper">
+                    <div class="row">
+                        <SfGrid DataSource="@_bloodPressure.Data">
+                            <GridColumns>
+                                <Syncfusion.Blazor.Grids.GridColumn HeaderText="일시" TextAlign="TextAlign.Center" Width="200">
+                                    <GridColumns>
+                                        <Syncfusion.Blazor.Grids.GridColumn Field=@nameof(BloodPressureByDate.Date) TextAlign="TextAlign.Center" HeaderText="참고치"></Syncfusion.Blazor.Grids.GridColumn>
+                                    </GridColumns>
+                                </Syncfusion.Blazor.Grids.GridColumn>
+                                <Syncfusion.Blazor.Grids.GridColumn HeaderText="시간" TextAlign="TextAlign.Center" Width="130">
+                                    <GridColumns>
+                                        <Syncfusion.Blazor.Grids.GridColumn Field=@nameof(BloodPressureByDate.DayPartType) TextAlign="TextAlign.Center" HeaderText="구분"></Syncfusion.Blazor.Grids.GridColumn>
+                                    </GridColumns>
+                                </Syncfusion.Blazor.Grids.GridColumn>
+                                <Syncfusion.Blazor.Grids.GridColumn HeaderText="수축기" TextAlign="TextAlign.Center" Width="200">
+                                    <GridColumns>
+                                        <Syncfusion.Blazor.Grids.GridColumn Field=@nameof(BloodPressureByDate.Systolic) TextAlign="TextAlign.Center" HeaderText="90~140"></Syncfusion.Blazor.Grids.GridColumn>
+                                    </GridColumns>
+                                </Syncfusion.Blazor.Grids.GridColumn>
+                                <Syncfusion.Blazor.Grids.GridColumn HeaderText="이완기" TextAlign="TextAlign.Center" Width="200">
+                                    <GridColumns>
+                                        <Syncfusion.Blazor.Grids.GridColumn Field=@nameof(BloodPressureByDate.Diastolic) TextAlign="TextAlign.Center" HeaderText="60~90"></Syncfusion.Blazor.Grids.GridColumn>
+                                    </GridColumns>
+                                </Syncfusion.Blazor.Grids.GridColumn>
+                                <Syncfusion.Blazor.Grids.GridColumn HeaderText="맥박" TextAlign="TextAlign.Center" Width="200">
+                                    <GridColumns>
+                                        <Syncfusion.Blazor.Grids.GridColumn Field=@nameof(BloodPressureByDate.Pulse) TextAlign="TextAlign.Center" HeaderText="60~80"></Syncfusion.Blazor.Grids.GridColumn>
+                                    </GridColumns>
+                                </Syncfusion.Blazor.Grids.GridColumn>
+                            </GridColumns>
+                        </SfGrid>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (_bloodPreessureLiteracy is not null)
+{
+    <div class="card">
+        <div class="card-body">
+            <h6 class="card-title">@_bloodPreessureLiteracy.LiteracyName</h6>
+            <hr />
+            <p>@_bloodPreessureLiteracy.LiteracyContent</p>
+        </div>
+    </div>
+    <br />
+
+    <div class="row">
+        @foreach (var youtubeContents in _bloodPreessureLiteracy.YoutubeContentList)
+        {
+            <div class="col-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <img src="@youtubeContents.Thumbnail" class="rounded float-start" style="width:220px; height:130px">
+                        </div>
+                        <br />
+                        <h6 class="card-title">@youtubeContents.Title</h6>
+                        <p>@youtubeContents.Introduction</p>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+
+@code {
+    private BloodPressureData? _bloodPressure;
+    private LiteracyInfo? _bloodPreessureLiteracy;
+    private PivotData? _bloodPressurePivotData;
+    private readonly DateTime _toDate = DateTime.Now;
+    private DateTime _fromDate = DateCalculate.CalculatePreviousMonthDate(36);
+
+    protected override async Task OnInitializedAsync()
+    {
+        _bloodPressure = await HttpClient.GetFromJsonAsync<BloodPressureData>($"/MyHealth/blood-pressure/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}/1/10");
+        _bloodPreessureLiteracy = await HttpClient.GetFromJsonAsync<LiteracyInfo>("/MyHealth/literacy-information/blood-pressure");
+        _bloodPressurePivotData = await HttpClient.GetFromJsonAsync<PivotData>($"/MyHealth/graph/blood-pressure/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}");
+
+        foreach (var youtubeContents in _bloodPreessureLiteracy.YoutubeContentList)
+        {
+            youtubeContents.Thumbnail = $"https://i.ytimg.com/vi/{youtubeContents.VideoId}/hqdefault.jpg";
+        }
+    }
+
+    public async void GetDifferentPeriodDataAsync(int months)
+    {
+        _fromDate = DateCalculate.CalculatePreviousMonthDate(months);
+
+        _bloodPressure = await HttpClient.GetFromJsonAsync<BloodPressureData>($"/MyHealth/blood-pressure/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}/1/10");
+        _bloodPressurePivotData = await HttpClient.GetFromJsonAsync<PivotData>($"/MyHealth/graph/blood-pressure/{_fromDate:yyyy-MM-dd}&{_toDate:yyyy-MM-dd}");
+
+        StateHasChanged();
+    }
+
+}

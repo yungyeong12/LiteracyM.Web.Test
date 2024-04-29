@@ -1,0 +1,90 @@
+﻿@inject HttpClient HttpClient
+@using Syncfusion.Blazor.Popups
+
+@if (_queryTypes == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <form method="post" @onsubmit="AddQueryAsync">
+        <select class="form-select" aria-label="Default select example" @bind="_queryTypeId">
+            <option value="-1">문의 유형 선택</option>
+            @foreach (var queryType in _queryTypes)
+            {
+                <option value="@queryType.Id">@queryType.Name</option>
+            }
+        </select>
+        <div class="mb-3">
+            <label for="title" class="form-label">제목</label>
+            <input class="form-control" id="title" placeholder="제목을 입력해주세요." @bind="_title">
+        </div>
+        <div class="mb-3">
+            <label for="contents" class="form-label">문의내용</label>
+            <textarea class="form-control" id="contents" rows="3" placeholder="내용을 입력해주세요." @bind="_contents"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">등록하기</button>
+    </form>
+
+    <SfDialog Target="#target" Width="500px" IsModal="true" @bind-Visible="Visibility">
+        <DialogTemplates>
+            <Header> 등록 완료 </Header>
+            <Content>
+                <p>
+                    1대1 문의가 등록되었습니다.
+                </p>
+            </Content>
+        </DialogTemplates>
+        <DialogButtons>
+            <DialogButton Content="확인" OnClick="@CloseDialog"/>
+        </DialogButtons>
+    </SfDialog>
+}
+
+@code {
+    private CustomerQueryType[]? _queryTypes;
+    private int _queryTypeId = -1;
+    private string _title = "";
+    private string _contents = "";
+    private bool Visibility { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _queryTypes = await HttpClient.GetFromJsonAsync<CustomerQueryType[]>("/CustomerQueries/customer-query-types");
+    }
+
+    private async void AddQueryAsync()
+    {
+        if (_queryTypeId == -1)
+        {
+            // 어떻게?
+        }
+
+        var addQuery = new AddCustomerQuery { InquiryTypeId = _queryTypeId, Title = _title, Content = _contents };
+        var result = await HttpClient.PostAsJsonAsync("/CustomerQueries/customer-query", addQuery);
+
+        if (result.IsSuccessStatusCode)
+        {
+            Visibility = true;
+            StateHasChanged();
+        }
+    }
+
+    private void CloseDialog()
+    {
+        _queryTypeId = -1;
+        _title = "";
+        _contents = "";
+        Visibility = false;
+
+        StateHasChanged();
+    }
+}
+
+<style>
+    #target {
+        min-height: 400px;
+        height: 100%;
+        position: relative;
+    }
+</style>

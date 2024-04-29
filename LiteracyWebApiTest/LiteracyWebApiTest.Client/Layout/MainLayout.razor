@@ -1,0 +1,57 @@
+﻿@inherits LayoutComponentBase
+@using Syncfusion.Blazor.SplitButtons
+@using Syncfusion.Blazor.Buttons
+@inject NavigationManager NavigationManager
+
+<div class="page">
+
+    <div class="sidebar">
+        <NavMenu/>
+    </div>
+
+    <main>
+        <div class="top-row px-4">
+            <AuthorizeView>
+                <Authorized>
+                    <SfButton IsPrimary="true" CssClass="e-outline" @onclick='() => NavigationManager.NavigateTo("/pdf")'> PDF </SfButton>
+                    <SfDropDownButton Content="톱니바퀴" CssClass="e-caret-hide e-outline">
+                        <DropDownMenuItems>
+                            <DropDownMenuItem Text="내가 가진 질병" IconCss="@Dashboard" Url="/mydisease"></DropDownMenuItem>
+                            <DropDownMenuItem Text="알림 설정" IconCss="@Notification" Url="/notification-settings"></DropDownMenuItem>
+                            <DropDownMenuItem Text="고객센터" IconCss="@Settings" Url="/customer-center"></DropDownMenuItem>
+                            <DropDownMenuItem Text="마이페이지" IconCss="@MyPage" Url="/mypage"></DropDownMenuItem>
+                            <DropDownMenuItem Text="로그아웃" IconCss="@Logout" Url='@context.User.FindFirst("bff:logout_url")?.Value'></DropDownMenuItem>
+                        </DropDownMenuItems>
+                    </SfDropDownButton>
+                </Authorized>
+                <NotAuthorized>
+                    <SfDropDownButton Content="톱니바퀴" CssClass="e-caret-hide e-outline">
+                        <DropDownMenuItems>
+                            <DropDownMenuItem Text="회원가입" IconCss="@Dashboard" Url="/mydisease"></DropDownMenuItem>
+                            <DropDownMenuItem Text="로그인" IconCss="@Notification" Url="/bff/login"></DropDownMenuItem>
+                            <DropDownMenuItem Text="고객센터" IconCss="@Settings" Url="/customer-center"></DropDownMenuItem>
+                        </DropDownMenuItems>
+                    </SfDropDownButton>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+</div>
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>
+
+@code {
+    const string Dashboard = "e-ddb-icons e-dashboard";
+    const string Notification = "e-ddb-icons e-notifications";
+    const string Settings = "e-ddb-icons e-settings";
+    const string MyPage = "e-ddb-icons e-mypage";
+    const string Logout = "e-ddb-icons e-logout";
+}

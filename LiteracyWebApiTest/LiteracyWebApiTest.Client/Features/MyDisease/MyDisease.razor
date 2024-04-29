@@ -1,0 +1,103 @@
+﻿@page "/mydisease"
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+@using Syncfusion.Blazor.Popups
+@using Syncfusion.Blazor.Buttons
+
+<h3>내가 가진 질병</h3>
+
+<div class="row">
+    <div class="col-9">
+        <h5>저장된 질병</h5>
+    </div>
+    <div class="col-3">
+        <button type="button" class="btn btn-outline-secondary" @onclick='() => NavigationManager.NavigateTo("/mydisease-search")'>검색어를 입력해 주세요</button>
+    </div>
+</div>
+<br/>
+
+@if (_patientDisease is not null)
+{
+    @if (!_patientDisease.Any())
+    {
+        <p>고객님의 질병을 추가해 주세요</p>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var disease in _patientDisease)
+            {
+                <div class="col-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-10">
+                                    <h6 class="card-subtitle mb-2 text-body-secondary">@disease.DiseaseName</h6>
+                                </div>
+                                <div class="col-2">
+                                    <button type="button" class="btn" data-bs-toggle="button" @onclick="() => SetDeleteDisease(disease.DiseaseName, disease.KBioCode)">
+                                        <SfIcon Name="IconName.Close" Size="IconSize.Large"></SfIcon>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <br/>
+            }
+        </div>
+    }
+}
+
+<SfDialog Target="#target" Width="400px" IsModal="true" @bind-Visible="Visibility">
+    <DialogTemplates>
+        <Header> 해당 질병을 삭제하시겠습니까? </Header>
+        <Content>
+            <p>
+                @selectedDiseaseName
+            </p>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        <DialogButton Content="아니요" OnClick="@CloseDialog"/>
+        <DialogButton Content="예" @onclick="() => DeleteDiseaseAsync(selectedDiseaseCode)"/>
+    </DialogButtons>
+</SfDialog>
+
+@code {
+    private IEnumerable<IndexDiseaseProfile>? _patientDisease;
+    private bool Visibility { get; set; } = false;
+    private string selectedDiseaseName = string.Empty;
+    private string selectedDiseaseCode = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _patientDisease = await HttpClient.GetFromJsonAsync<List<IndexDiseaseProfile>>("/Disease/profile");
+    }
+
+    private void SetDeleteDisease(string diseaseName, string diseaseCode)
+    {
+        selectedDiseaseName = diseaseName;
+        selectedDiseaseCode = diseaseCode;
+
+        Visibility = true;
+    }
+
+    private void CloseDialog()
+    {
+        Visibility = false;
+
+        StateHasChanged();
+    }
+
+    private async void DeleteDiseaseAsync(string kbioCode)
+    {
+        var result = await HttpClient.DeleteAsync($"/Disease/profile/{kbioCode}");
+        if (result.IsSuccessStatusCode)
+        {
+            _patientDisease = _patientDisease.Where(item => item.KBioCode != kbioCode).ToArray();
+            Visibility = false;
+            StateHasChanged();
+        }
+    }
+}

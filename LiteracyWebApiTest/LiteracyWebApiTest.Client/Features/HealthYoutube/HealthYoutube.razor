@@ -1,0 +1,72 @@
+﻿@page "/health-youtube"
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+
+<h5>건강유튜브</h5>
+<div class="row">
+    <div class="col-2 d-grid">
+        <button type="button" class="btn btn-outline-secondary" @onclick='() => NavigationManager.NavigateTo("/health-youtube-filter")'> 주제변경 </button>
+    </div>
+    <div class="col-8">
+        <button type="button" class="btn btn-outline-secondary" @onclick='() => GetYoutubeContentsAsync("RE01")'> 추천 </button>
+        @if (_patientSubCategories is not null)
+        {
+            @foreach (var category in _patientSubCategories)
+            {
+                <button type="button" class="btn btn-outline-secondary" @onclick="() => GetYoutubeContentsAsync(category.Code)"> @category.Classification </button>
+            }
+        }
+    </div>
+    <div class="col-2">
+        <button type="button" class="btn btn-outline-danger" @onclick='() => NavigationManager.NavigateTo("/saved-video")'>저장영상</button>
+    </div>
+</div>
+<br />
+
+<div class="row">
+    @if (_youtubeContents is not null)
+    {
+        @foreach (var contents in _youtubeContents.Data)
+        {
+            <div class="col-4">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <button type="button" @onclick='() => NavigationManager.NavigateTo($"/health-youtube-detail/{contents.VideoCode}")'>
+                                <img src="@contents.Thumbnail" class="rounded float-start" style="width:270px; height:170px">
+                            </button>
+                        </div>
+                        <h6 class="card-title">@contents.Title</h6>
+                        <p>@contents.Introduction</p>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private YoutubeCategory[]? _patientSubCategories;
+    private YoutubeContents? _youtubeContents;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _patientSubCategories = await HttpClient.GetFromJsonAsync<YoutubeCategory[]>("/HealthYoutube/patient/sub-categories");
+        GetYoutubeContentsAsync("RE01");
+    }
+
+    private async void GetYoutubeContentsAsync(string videoCode)
+    {
+        _youtubeContents = await HttpClient.GetFromJsonAsync<YoutubeContents>($"/HealthYoutube/sub-category/youtube-contents/{videoCode}/1/10/accuracy");
+
+        if (_youtubeContents.Data.Count > 0)
+        {
+            foreach (var data in _youtubeContents.Data)
+            {
+                data.Thumbnail = $"https://i.ytimg.com/vi/{data.VideoId}/hqdefault.jpg";
+            }
+        }
+
+        StateHasChanged();
+    }
+}

@@ -1,0 +1,30 @@
+﻿<div class="card" style="width: 18rem;">
+    <div class="card-body">
+        <div class="row">
+            @if (Drug.IsTaking)
+            {
+                <button type="button" class="btn btn-danger btn-sm col-2">복용</button>
+            }
+            else
+            {
+                <button type="button" class="btn btn-dark btn-sm col-2">미복용</button>
+            }
+            <h5 class="card-title col-8">@Drug.PrescriptionDrugName</h5>
+            <button class="btn col-2" @onclick="@(async () => await OnSelected.InvokeAsync(@Drug))">></button>
+        </div>
+        @if (Drug.ImageUrl != "")
+        {
+            <img src="@Drug.ImageUrl" class="rounded float-start" style="width:100px; height:100px">
+        }
+        <p class="card-text">@Drug.DispensingDate @Drug.Content | @Drug.DailyDosesNumber 회</p>
+        <p class="card-text">@Drug.EffectSummary</p>
+    </div>
+</div>
+<br/>
+
+@code {
+    [Parameter, EditorRequired]
+    public DrugInfo Drug { get; set; } = default!;
+    [Parameter]
+    public EventCallback<DrugInfo> OnSelected { get; set; }
+}

@@ -1,0 +1,212 @@
+﻿@page "/symptom"
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+@using Syncfusion.Blazor.Charts
+@using Syncfusion.Blazor.Buttons
+
+@if (_symptomTrackerNotes is not null)
+{
+    <div class="row">
+        <div class="col-4">
+            <p><SfIcon Name="IconName.StarFilled" Size="IconSize.Large" style="color:orange"></SfIcon> 즐겨찾기를 등록해 주세요.</p>
+            @foreach (var symptomTrackerNote in _symptomTrackerNotes)
+            {
+                <div class="card" @onclick="() => GetSymptomDetailAsync(symptomTrackerNote.SymptomTrackerCode)">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-2">
+                                @if (symptomTrackerNote.IsBookmark)
+                                {
+                                    <button type="button" class="btn" data-bs-toggle="button" @onclick="() => ChangeBookmarkAsync(symptomTrackerNote.SymptomTrackerCode, !symptomTrackerNote.IsBookmark)">
+                                        <SfIcon Name="IconName.StarFilled" Size="IconSize.Large" style="color:orange"></SfIcon>
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button type="button" class="btn" data-bs-toggle="button" @onclick="() => ChangeBookmarkAsync(symptomTrackerNote.SymptomTrackerCode, !symptomTrackerNote.IsBookmark)">
+                                        <SfIcon Name="IconName.StarFilled" Size="IconSize.Large"></SfIcon>
+                                    </button>
+                                }
+                            </div>
+                            <div class="col-7">
+                                <h6 class="card-title">@symptomTrackerNote.Keyword</h6>
+                                <p>@symptomTrackerNote.RecordDate</p>
+                            </div>
+                            <div class="col-3">
+                                <h5>@symptomTrackerNote.Value.ToString("0.##") @symptomTrackerNote.Unit</h5>
+                            </div>
+                        </div>
+                        <hr/>
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-outline-secondary" @onclick='() => NavigationManager.NavigateTo($"/symptom-registration/new/{symptomTrackerNote.SymptomTrackerCode}")'>+ 증상 추가 입력하기</button>
+                        </div>
+                    </div>
+                </div>
+                <br/>
+            }
+            <div class="d-grid gap-2">
+                <button type="button" class="btn btn-success" @onclick='() => NavigationManager.NavigateTo("/symptom-search")'>증상 추가하기</button>
+            </div>
+        </div>
+        <div class="col-8">
+            @if (_symptomInfoDetail is not null && _symptomTrackerNoteValues is not null)
+            {
+                <div class="row">
+                    <div class="col-9">
+                        <p><b>@_symptomInfoDetail.Keyword</b></p>
+                    </div>
+                    <div class="col-3">
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-light" @onclick="() => RemoveSymptomAsync(_symptomInfoDetail.Code)">증상 삭제하기</button>
+                        </div>
+                    </div>
+                </div>
+                <br/>
+                <div class="btn-group" role="group" aria-label="Basic outlined example">
+                    <button type="button" class="btn btn-outline-dark" @onclick="() => GetDifferentPeriodDataAsync(_symptomInfoDetail.Code, 1)">1개월</button>
+                    <button type="button" class="btn btn-outline-dark" @onclick="() => GetDifferentPeriodDataAsync(_symptomInfoDetail.Code, 3)">3개월</button>
+                    <button type="button" class="btn btn-outline-dark" @onclick="() => GetDifferentPeriodDataAsync(_symptomInfoDetail.Code, 12)">12개월</button>
+                </div>
+                <br/>
+                @if (_symptomTrackerNoteValues.Length > 0)
+                {
+                    <p>총 <b style="color:red">@_symptomTrackerNoteValues.Length</b>건</p>
+                    <br/>
+                    <div class="card">
+                        <div class="card-body">
+                            <SfChart DataSource="@_symptomTrackerNoteValues" @ref="Chart">
+                                <ChartArea><ChartAreaBorder Width="0"></ChartAreaBorder></ChartArea>
+                                <ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.DateTime">
+                                    <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                                </ChartPrimaryXAxis>
+                                <ChartPrimaryYAxis Minimum="0" Maximum="10" Interval="1" RangePadding="ChartRangePadding.None">
+                                    <ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+                                    <ChartAxisLineStyle Width="0"></ChartAxisLineStyle>
+                                </ChartPrimaryYAxis>
+
+                                <ChartSeriesCollection>
+                                    <ChartSeries Name="통증" XName="RecordDate" YName="Value" Type="ChartSeriesType.Scatter" Fill="red" Opacity="0.5">
+                                        <ChartMarker Height="10" Width="10" Shape="ChartShape.Circle">
+                                        </ChartMarker>
+                                    </ChartSeries>
+                                </ChartSeriesCollection>
+
+                                <ChartLegendSettings Visible="true" Position="LegendPosition.Top" Alignment="Syncfusion.Blazor.Charts.Alignment.Far">
+                                </ChartLegendSettings>
+                            </SfChart>
+                        </div>
+                    </div>
+                    <br/>
+                    <div class="card">
+                        <div class="card-body">
+                            @if (_symptomTrackerNoteValues is not null)
+                            {
+                                @foreach (var value in _symptomTrackerNoteValues)
+                                {
+                                    <div class="row">
+                                        <div class="col-3">@value.RecordDate.ToShortDateString()</div>
+                                        <div class="col-3">@value.RecordDate.ToShortTimeString()</div>
+                                        <div class="col-3">@value.Value.ToString("0.##")</div>
+                                        <div class="col-3">
+                                            <button type="button" class="btn btn-light" @onclick='() => NavigationManager.NavigateTo($"/symptom-registration/old/{value.SymptomTrackerCode}/{value.Id}")'>수정하기</button>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <p>해당 기간에 데이터가 없습니다.</p>
+                }
+                <br/>
+                <div class="card">
+                    <div class="card-body">
+                        <h5>@_symptomInfoDetail.Keyword</h5>
+                        <hr/>
+                        <p>@_symptomInfoDetail.Description</p>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private IEnumerable<SymptomTrackerNote>? _symptomTrackerNotes;
+    private SymptomTrackerNote[]? _symptomTrackerNoteValues;
+    private SymptomInfoDetail? _symptomInfoDetail;
+    private readonly DateTime _toDate = DateTime.Now;
+    private DateTime _fromDate = DateCalculate.CalculatePreviousMonthDate(1);
+    SfChart Chart;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _symptomTrackerNotes = await HttpClient.GetFromJsonAsync<List<SymptomTrackerNote>>("/Symptom/patient/notes");
+
+        if (_symptomTrackerNotes is not null)
+        {
+            var code = _symptomTrackerNotes.FirstOrDefault().SymptomTrackerCode;
+            await GetSymptomDetailAsync(code);
+        }
+    }
+
+    private async void ChangeBookmarkAsync(string code, bool isBookmark)
+    {
+        var result = await HttpClient.PostAsJsonAsync($"/Symptom/patient/bookmarks/{code}/{isBookmark}", new{});
+
+        if (result.IsSuccessStatusCode)
+        {
+            _symptomTrackerNotes = await HttpClient.GetFromJsonAsync<List<SymptomTrackerNote>>("/Symptom/patient/notes");
+
+            StateHasChanged();
+        }
+    }
+
+    public async void GetDifferentPeriodDataAsync(string code, int months)
+    {
+        _fromDate = DateCalculate.CalculatePreviousMonthDate(months);
+
+        _symptomTrackerNoteValues = await HttpClient.GetFromJsonAsync<SymptomTrackerNote[]>($"/Symptom/patient/trackers/codes/{code}/values?fromDate={_fromDate:yyyy-MM-dd}&toDate={_toDate:yyyy-MM-dd}&pageNumber=1&recordPerPage=10");
+
+        StateHasChanged();
+        await Chart.RefreshAsync();
+    }
+
+    public async Task GetSymptomDetailAsync(string code)
+    {
+        _fromDate = DateCalculate.CalculatePreviousMonthDate(1);
+
+        _symptomInfoDetail = await HttpClient.GetFromJsonAsync<SymptomInfoDetail>($"/Symptom/{code}");
+        _symptomTrackerNoteValues = await HttpClient.GetFromJsonAsync<SymptomTrackerNote[]>($"/Symptom/patient/trackers/codes/{code}/values?fromDate={_fromDate:yyyy-MM-dd}&toDate={_toDate:yyyy-MM-dd}&pageNumber=1&recordPerPage=10");
+        
+        StateHasChanged();
+        if (_symptomTrackerNoteValues.Length > 0)
+        {
+            await Chart.RefreshAsync();
+        }
+    }
+
+    public async void RemoveSymptomAsync(string code)
+    {
+        var result = await HttpClient.DeleteAsync($"/Symptom/patient/trackers/{code}");
+
+        if (result.IsSuccessStatusCode)
+        {
+            _symptomTrackerNotes = _symptomTrackerNotes.Where(item => item.SymptomTrackerCode != code);
+
+            if (_symptomTrackerNotes.Any())
+            {
+                var firstCode = _symptomTrackerNotes.FirstOrDefault().SymptomTrackerCode;
+                GetSymptomDetailAsync(firstCode);
+            }
+            else
+            {
+                // 어떻게 하지?
+            }
+
+            StateHasChanged();
+        }
+    }
+}

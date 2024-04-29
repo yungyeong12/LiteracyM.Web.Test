@@ -1,0 +1,136 @@
+﻿@page "/mypage"
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+@using Syncfusion.Blazor.Popups
+
+<h3>마이페이지</h3>
+
+@if (_patientProfile == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="row">
+        <div class="card col-4">
+            <div class="card-body">
+                <h5 class="card-title">반갑습니다 <b style="color: red">@_patientProfile.KoreanName</b> 님</h5>
+                <div class="row">
+                    <div class="card col-3">
+                        <div class="card-body">
+                            <h5 class="card-title">@((_patientProfile.Gender == "Female") ? "여성" : "남성")</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">성별</h6>
+                        </div>
+                    </div>
+                    <div class="card col-5">
+                        <div class="card-body">
+                            <h5 class="card-title">@_patientProfile.BirthDate.Replace("-", ".")</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">생년월일</h6>
+                        </div>
+                    </div>
+                    <div class="card col-4">
+                        <div class="card-body">
+                            <h5 class="card-title">6</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">리터러시</h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card col-8">
+            <h5 class="card-title">프로필</h5>
+            <form method="post" @onsubmit="UpdatePatientProfileAsync">
+                <div class="mb-3">
+                    <label for="name" class="form-label">이름</label>
+                    <input type="text" class="form-control" id="name" placeholder="@_patientProfile.KoreanName" disabled>
+                </div>
+                <div class="mb-3">
+                    <label for="nickName" class="form-label">닉네임</label>
+                    <input type="text" class="form-control" id="nickName" placeholder="닉네임을 입력해주세요" @bind="_patientProfile.NickName" />
+                </div>
+                <div class="mb-3">
+                    <label for="birth" class="form-label">생년월일</label>
+                    <input type="text" class="form-control" id="birth" placeholder="@_patientProfile.BirthDate" disabled>
+                </div>
+                <div class="mb-3">
+                    <label for="pregnantDueDate" class="form-label">출산예정일</label>
+                    <input type="text" class="form-control" id="pregnantDueDate" @bind="_patientProfile.PregnantDueDate"/>
+                </div>
+                <div class="mb-3">
+                    <label for="height" class="form-label">키</label>
+                    <input type="text" class="form-control" id="height" placeholder="@_patientProfile.Height cm" disabled>
+                </div>
+                <div class="mb-3">
+                    <label for="loginInfo" class="form-label">로그인 정보</label>
+                    <input type="text" class="form-control" id="loginInfo" placeholder="@_patientProfile.Provider @_patientProfile.Email" disabled>
+                </div>
+                <button type="submit" class="btn btn-primary">저장하기</button>
+            </form>
+        </div>
+    </div>
+
+    <p>계정을 탈퇴해야 하나요? <button type="button" class="btn btn-link" @onclick="NavigateToSecessionPage">탈퇴하기</button></p>
+
+    <SfDialog Target="#target" Width="500px" IsModal="true" @bind-Visible="Visibility">
+        <DialogTemplates>
+            <Header> 프로필 저장 성공 </Header>
+            <Content>
+                <p>
+                    프로필 저장에 성공했습니다.
+                </p>
+            </Content>
+        </DialogTemplates>
+        <DialogButtons>
+            <DialogButton Content="확인" OnClick="@CloseDialog"/>
+        </DialogButtons>
+    </SfDialog>
+}
+
+
+@code {
+    private PatientProfile? _patientProfile;
+    private bool Visibility { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // _patientProfile = await HttpClient.GetFromJsonAsync<PatientProfile>("/Account/profile");
+        var test = await HttpClient.GetFromJsonAsync<Token>("/Token/test");
+        Console.WriteLine(test.AccessToken);
+    }
+
+    private async void UpdatePatientProfileAsync()
+    {
+        var changeNicknameResult = await HttpClient.PostAsJsonAsync("/Account/profile/nick-name", new { NickName = _patientProfile.NickName });
+        var changePregnantDueDateResult = await HttpClient.PostAsJsonAsync("/Account/profile/pregnant-due-date", new { PregnantDueDate = _patientProfile.PregnantDueDate });
+
+        if (changeNicknameResult.IsSuccessStatusCode && changePregnantDueDateResult.IsSuccessStatusCode)
+        {
+            Visibility = true;
+            StateHasChanged();
+        }
+    }
+
+    private void NavigateToSecessionPage()
+    {
+        NavigationManager.NavigateTo($"/secession/{_patientProfile.KoreanName}");
+    }
+
+    public class Token
+    {
+        public string AccessToken { get; set; } = string.Empty;
+    }
+
+    private void CloseDialog()
+    {
+        Visibility = false;
+    }
+
+}
+
+<style>
+    #target {
+        min-height: 400px;
+        height: 100%;
+        position: relative;
+    }
+</style>

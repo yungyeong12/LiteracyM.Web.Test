@@ -1,0 +1,132 @@
+﻿@page "/symptom-registration/{dataType}/{symptomCode}/{symptomId?}"
+@using Syncfusion.Blazor.Calendars
+@using Syncfusion.Blazor.Inputs
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+
+@if (SelectedSymptom is not null)
+{
+    <div class="row">
+        <div class="col-8">
+            <h5>@SelectedSymptom.Keyword</h5>
+        </div>
+        @if (DataType == "new")
+        {
+            <div class="col-2"></div>
+            <div class="col-2">
+                <button type="button" class="btn btn-danger" @onclick="AddSymptomAsync">저장하기</button>
+            </div>
+        }
+        else
+        {
+            <div class="col-2">
+                <button type="button" class="btn btn-light" @onclick="DeleteSymptomAsync">삭제하기</button>
+            </div>
+            <div class="col-2">
+                <button type="button" class="btn btn-danger" @onclick="ChangeSymptomAsync">저장하기</button>
+            </div>
+        }
+    </div>
+    <div class="col-lg-12 control-section">
+        <div class="control-wrapper">
+            <SfDateTimePicker TValue="DateTime" @bind-Value="@SelectedDate" FullScreen="true" ShowClearButton="true"></SfDateTimePicker>
+        </div>
+    </div>
+    <br/>
+    @if (SelectedSymptom.Unit == "℃")
+    {
+        <p>발열의 정도를 입력해주세요.</p>
+        <div class="control-wrapper">
+            <div class="example-content">
+                <SfNumericTextBox TValue="decimal" @bind-Value="@PainLevel" EnableMinMax="true" Min="34" Max="43"></SfNumericTextBox>
+            </div>
+        </div>
+    }
+    else
+    {
+        <p>통증의 정도를 입력해주세요.</p>
+        <div class="control-wrapper">
+            <div class="example-content">
+                <SfNumericTextBox TValue="decimal" @bind-Value="@PainLevel" EnableMinMax="true" Min="1" Max="10"></SfNumericTextBox>
+            </div>
+        </div>
+    }
+    <br/>
+    <div class="card">
+        <div class="card-body">
+            <h5>@SelectedSymptom.Keyword</h5>
+            <hr/>
+            <p>@SelectedSymptom.Description</p>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string SymptomCode { get; set; } = default!;
+    [Parameter]
+    public string DataType { get; set; } = default!;
+    [Parameter]
+    public string? SymptomId { get; set; }
+    SymptomByKeyword? SelectedSymptom { get; set; }
+    public DateTime SelectedDate { get; set; } = DateTime.Now;
+    public decimal PainLevel { get; set; } = 5;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        SelectedSymptom = await HttpClient.GetFromJsonAsync<SymptomByKeyword>($"/Symptom/{SymptomCode}");
+        if (SelectedSymptom.Unit == "")
+        {
+            PainLevel = 36;
+        }
+        if (DataType == "old")
+        {
+            var result = await HttpClient.GetFromJsonAsync<PatientSymptomTrackerValue>($"/Symptom/patient/{SymptomId}/note");
+            if (result is not null)
+            {
+                SelectedDate = DateTime.Parse(result.RecordDate);
+                PainLevel = result.Value;
+            }
+        }
+    }
+
+    private async void AddSymptomAsync()
+    {
+        var dateTime = SelectedDate.ToString("yyyy-MM-dd HH:mm");
+        var addQuery = new SymptomTrackerRecord { Code = SelectedSymptom.Code, RecordDate = dateTime, Value = PainLevel };
+        var result = await HttpClient.PostAsJsonAsync("/Symptom/patient/trackers/record", addQuery);
+
+        if (result.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo("/symptom");
+        }
+    }
+
+    private async void ChangeSymptomAsync()
+    {
+        var dateTime = SelectedDate.ToString("yyyy-MM-dd HH:mm");
+        var addQuery = new PatientSymptomTrackerValue { Id = SymptomId, RecordDate = dateTime, Value = PainLevel };
+        var result = await HttpClient.PatchAsJsonAsync("/Symptom/patient/trackers/record", addQuery);
+
+        if (result.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo("/symptom");
+        }
+    }
+
+    private async void DeleteSymptomAsync()
+    {
+        var result = await HttpClient.DeleteAsync($"/Symptom/patient/trackers/{SymptomCode}/{SymptomId}");
+        if (result.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo("/symptom");
+        }
+    }
+}
+<style>
+    .control-wrapper {
+        max-width: 275px;
+        margin: 0 0;
+        padding: 0px 0px 0px;
+    }]
+</style>
